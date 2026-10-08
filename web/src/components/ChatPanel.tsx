@@ -15,7 +15,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LLMClient, Message, SqlEngine } from '../../../src/llm/types.js';
 import { chatQuestion, createChatSession, type ChatEvent } from '../core/chat.js';
+import type { ChartSpec } from '../../../src/llm/chart.js';
+import type { Theme } from '../theme.js';
 import AnswerMarkdown from './AnswerMarkdown.js';
+import ChartBlock from './ChartBlock.js';
 import ResultTable from './ResultTable.js';
 import { DEMO_QUESTIONS } from '../demoQuestions.js';
 
@@ -41,6 +44,7 @@ function persistShowSql(value: boolean): void {
 
 type SqlPart = { n: number; sql: string };
 type RowsPart = { n: number; columns: string[]; rows: unknown[][]; truncated: boolean };
+type ChartPart = { n: number; spec: ChartSpec };
 
 type ChatMsg =
   | { role: 'user'; content: string }
@@ -51,6 +55,8 @@ type ChatMsg =
       startedAt: number;
       sql: SqlPart[];
       rows: RowsPart[];
+      charts: ChartPart[];
+      done: boolean;
       error: string | null;
     };
 
@@ -75,6 +81,8 @@ interface ChatPanelProps {
   engineError?: string | null;
   /** Opens the Settings dialog (used by the unconfigured hint). */
   onOpenSettings: () => void;
+  /** Active theme (drives the chart palette). Defaults to light. */
+  theme?: Theme;
 }
 
 export default function ChatPanel({
@@ -82,6 +90,7 @@ export default function ChatPanel({
   client,
   engineError = null,
   onOpenSettings,
+  theme = 'light',
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [history, setHistory] = useState<Message[]>([]);
@@ -115,7 +124,7 @@ export default function ChatPanel({
     setMessages((m) => [
       ...m,
       { role: 'user', content: question },
-      { role: 'assistant', text: '', thinking: true, startedAt, sql: [], rows: [], error: null },
+      { role: 'assistant', text: '', thinking: true, startedAt, sql: [], rows: [], charts: [], done: false, error: null },
     ]);
 
     let acc = '';
@@ -137,13 +146,16 @@ export default function ChatPanel({
           truncated: e.truncated,
         };
         patch((m) => (m.role === 'assistant' ? { ...m, rows: [...m.rows, part] } : m));
+      } else if (e.type === 'chart') {
+        const part: ChartPart = { n: e.n, spec: e.spec };
+        patch((m) => (m.role === 'assistant' ? { ...m, charts: [...m.charts, part] } : m));
       } else if (e.type === 'token') {
         acc += e.text;
         patch((m) => (m.role === 'assistant' ? { ...m, thinking: false, text: acc } : m));
       } else if (e.type === 'done') {
         acc = e.answer;
         setHistory(e.history);
-        patch((m) => (m.role === 'assistant' ? { ...m, thinking: false, text: acc } : m));
+        patch((m) => (m.role === 'assistant' ? { ...m, thinking: false, text: acc, done: true } : m));
       } else if (e.type === 'error') {
         error = e.message;
         patch((m) => (m.role === 'assistant' ? { ...m, thinking: false, error } : m));
@@ -247,6 +259,10 @@ export default function ChatPanel({
               ) : (
                 <AnswerMarkdown text={m.text} />
               )}
+              {m.done &&
+                m.charts.map((c) => (
+                  <ChartBlock key={c.n} spec={c.spec} theme={theme} />
+                ))}
               {showSql &&
                 m.sql.map((s) => (
                   <details key={`sql-${s.n}`}>

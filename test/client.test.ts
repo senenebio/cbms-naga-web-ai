@@ -218,4 +218,79 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
       }),
     ).rejects.toThrow('exceeded 4 tool rounds');
   });
+
+  it('records a make_chart call and returns it in chartCalls', async () => {
+    let n = 0;
+    const client: LLMClient = {
+      async chat(_messages: Message[], tools: ToolSpec[]) {
+        if (tools.length === 0) return { role: 'assistant', content: 'Final.' };
+        n += 1;
+        if (n === 1) {
+          return {
+            role: 'assistant',
+            content: null,
+            tool_calls: [
+              {
+                id: 'mc_1',
+                name: 'make_chart',
+                arguments: JSON.stringify({
+                  type: 'bar',
+                  data: [{ name: 'A', value: 1 }, { name: 'B', value: 2 }],
+                }),
+              },
+            ],
+          };
+        }
+        return { role: 'assistant', content: 'Final answer with a chart.' };
+      },
+    };
+    const outcome = await askQuestion({
+      client,
+      system: 'system',
+      history: [],
+      question: 'chart it',
+      execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),
+    });
+    expect(outcome.chartCalls).toHaveLength(1);
+    expect(outcome.chartCalls[0]?.type).toBe('bar');
+    expect(outcome.chartCalls[0]?.data).toEqual([
+      { name: 'A', value: 1 },
+      { name: 'B', value: 2 },
+    ]);
+    expect(outcome.chartCalls[0]?.xKey).toBe('name');
+    expect(outcome.chartCalls[0]?.series).toEqual(['value']);
+  });
+
+  it('feeds a bad make_chart spec back to the LLM as a tool error (not recorded)', async () => {
+    let sawErrorTool = false;
+    const client: LLMClient = {
+      async chat(messages: Message[], tools: ToolSpec[]) {
+        if (tools.length === 0) return { role: 'assistant', content: 'Final.' };
+        const lastTool = [...messages].reverse().find((m) => m.role === 'tool');
+        if (lastTool && lastTool.role === 'tool' && lastTool.content.includes('error')) {
+          sawErrorTool = true;
+        }
+        if (!sawErrorTool) {
+          return {
+            role: 'assistant',
+            content: null,
+            tool_calls: [
+              { id: 'mc_bad', name: 'make_chart', arguments: JSON.stringify({ type: 'bar', data: [] }) },
+            ],
+          };
+        }
+        return { role: 'assistant', content: 'Final answer after the bad chart.' };
+      },
+    };
+    const outcome = await askQuestion({
+      client,
+      system: 'system',
+      history: [],
+      question: 'chart it',
+      execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),
+    });
+    expect(outcome.chartCalls).toEqual([]);
+    expect(sawErrorTool).toBe(true);
+    expect(outcome.answer).toBe('Final answer after the bad chart.');
+  });
 });

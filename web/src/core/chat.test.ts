@@ -117,4 +117,36 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
     );
     expect(events).toEqual([{ type: 'error', message: UNCONFIGURED_MESSAGE }]);
   });
+
+  it('yields a chart event for a make_chart call (before the answer text)', async () => {
+    const session = await createChatSession(stubEngine);
+    const client: LLMClient = {
+      async chat(messages: Message[], _tools: unknown[]) {
+        const prior = messages.filter((m) => m.role === 'tool').length;
+        if (prior === 0) {
+          return {
+            role: 'assistant',
+            content: null,
+            tool_calls: [
+              {
+                id: 'mc-1',
+                name: 'make_chart',
+                arguments: JSON.stringify({ type: 'bar', data: [{ name: 'A', value: 1 }] }),
+              },
+            ],
+          };
+        }
+        return { role: 'assistant', content: 'charted.' };
+      },
+    };
+    const events = await collect(
+      chatQuestion({ session, client, history: [], question: 'chart it' }),
+    );
+    expect(events.map((e) => e.type)).toEqual(['chart', 'token', 'done']);
+    expect(events[0]).toEqual({
+      type: 'chart',
+      n: 1,
+      spec: { type: 'bar', data: [{ name: 'A', value: 1 }], xKey: 'name', series: ['value'] },
+    });
+  });
 });

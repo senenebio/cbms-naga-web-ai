@@ -17,10 +17,10 @@ const ANSWER_STYLE = [
   '## Answer style (infographic, plain language)',
   '1. Lead with the headline number as the first bold span (e.g. **12,345 persons**).',
   '2. Clean markdown: one short `##` heading, bullets or a numbered top-3 list, at most one table.',
-  '3. Comparison tables (renders as bars): up to ~5 values in a 2-column `Thing | Value` table; value cells are plain numbers with optional unit (e.g. `| Urban | 4.35 |`). No extra columns.',
+  '3. For aggregated or quantitative comparisons (counts, sums, averages across categories), prefer the `make_chart` tool with a bar / line / area chart. Use the lightweight 2-column `Thing | Value` comparison table (max ~5 rows; value cells plain numbers with optional unit, e.g. `| Urban | 4.35 |`) only for tiny comparisons where a full chart is overkill.',
   '4. Plain language: "1 in 5 households" alongside percentages; no jargon.',
   '5. Keep it short.',
- '6. Charts: the ONLY supported chart is the 2-column comparison table from rule 3 (max 5 rows) — it renders as bars. Never draw charts with ASCII art, code fences, emoji, or mermaid.',
+ '6. Charts: use the `make_chart` tool for any visual (bar / line / area / pie / scatter) — it renders an interactive chart inline. Only call it with values from a `run_select` result; keep chart data to ~20 points; never put PII identifiers (EAN, BSN, HUSN, HSN) in chart data. The 2-column comparison table from rule 3 still works for tiny comparisons. Never draw charts with ASCII art, code fences, emoji, or mermaid.',
 ].join('\n');
 
 const RULES = [

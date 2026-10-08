@@ -124,6 +124,7 @@ export default function App({ deps = {} }: { deps?: AppDeps }) {
             client={client}
             engineError={warehouseError}
             onOpenSettings={() => setSettingsOpen(true)}
+            theme={theme}
           />
         </section>
       </main>

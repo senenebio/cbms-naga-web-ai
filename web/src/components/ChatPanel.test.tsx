@@ -11,7 +11,7 @@ import createRenderer, {
   type ReactTestRenderer,
 } from 'react-test-renderer';
 import ChatPanel from './ChatPanel';
-import { stubEngine, StubLlm } from '../testStubs';
+import { stubEngine, StubLlm, ChartStubLlm } from '../testStubs';
 
 let tree: ReactTestRenderer;
 
@@ -114,6 +114,28 @@ describe('ChatPanel', () => {
     expect(text).toContain('SQL');
     expect(text).toContain('Raw rows');
     expect(text).toContain('SELECT 1 AS n');
+  }, 10000);
+
+  it('renders a make_chart result inline after the answer', async () => {
+    const llm = new ChartStubLlm({ answer: 'See the chart below.' });
+    tree = createRenderer.create(
+      React.createElement(ChatPanel, {
+        engine: stubEngine(),
+        client: llm,
+        onOpenSettings: () => {},
+        theme: 'light',
+      }),
+    );
+
+    setDraft(tree.root, 'Chart households by barangay.');
+    submit(tree.root);
+    await flush();
+    await flush();
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('See the chart below.');
+    // The chart is gated on the done flag, which has fired — the title renders inline.
+    expect(text).toContain('Households by barangay');
   }, 10000);
 
   it('New chat clears the conversation', async () => {

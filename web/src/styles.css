@@ -429,6 +429,29 @@ body {
   font-size: 13px;
 }
 
+/* ---- advanced charts (Recharts) ---- */
+.chart-block {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.chart-block .chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.chart-block .chart-body {
+  width: 100%;
+  padding: 4px;
+}
+.chart-block .note {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
 /* ---- LLM settings dialog ---- */
 .settings-overlay {
   position: fixed;

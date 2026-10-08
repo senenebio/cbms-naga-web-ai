@@ -51,3 +51,48 @@ export class StubLlm implements LLMClient {
     return { role: 'assistant', content: this.answer };
   }
 }
+
+export interface ChartStubLlmOptions {
+  /** Final answer text (sent whole on the second `chat()` call). */
+  answer?: string;
+  /** `make_chart` arguments JSON emitted on the first `chat()` call. */
+  chartArgs?: string;
+}
+
+/**
+ * A deterministic `LLMClient` whose first `chat()` call emits a `make_chart`
+ * tool call (the second returns the canned final answer). Used to exercise the
+ * chart pipeline in component tests without a real LLM.
+ */
+export class ChartStubLlm implements LLMClient {
+  calls = 0;
+  readonly answer: string;
+  readonly chartArgs: string;
+
+  constructor(opts: ChartStubLlmOptions = {}) {
+    this.answer = opts.answer ?? 'Here is the chart.';
+    this.chartArgs =
+      opts.chartArgs ??
+      JSON.stringify({
+        type: 'bar',
+        title: 'Households by barangay',
+        data: [
+          { name: 'A', value: 1 },
+          { name: 'B', value: 2 },
+        ],
+        xKey: 'name',
+        series: ['value'],
+      });
+  }
+
+  async chat(_messages: Message[], _tools: ToolSpec[]): Promise<AssistantMessage> {
+    this.calls += 1;
+    if (this.calls === 1) {
+      const toolCalls: ToolCall[] = [
+        { id: 'mc1', name: 'make_chart', arguments: this.chartArgs },
+      ];
+      return { role: 'assistant', content: null, tool_calls: toolCalls };
+    }
+    return { role: 'assistant', content: this.answer };
+  }
+}

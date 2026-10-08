@@ -8,6 +8,7 @@
  */
 import type { LLMClient, Message, SqlEngine } from './types.js';
 import { askQuestion } from './client.js';
+import type { ChartSpec } from './chart.js';
 import { runSelect } from './sql_tool.js';
 import { buildSchemaBlock, selectColumns } from '../schema.js';
 import { buildSystemPrompt } from './prompts.js';
@@ -34,6 +35,7 @@ export async function systemForQuestion(
 export type ChatEvent =
   | { type: 'sql'; sql: string }
   | { type: 'rows'; columns: string[]; rows: unknown[][]; truncated: boolean }
+  | { type: 'chart'; n: number; spec: ChartSpec }
   | { type: 'token'; text: string }
   | { type: 'done'; answer: string; history: Message[] }
   | { type: 'error'; message: string };
@@ -66,6 +68,7 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     sql: string;
     result: { columns: string[]; rows: unknown[][]; truncated: boolean };
   }[];
+  let chartCalls: ChartSpec[];
   try {
     const outcome = await askQuestion({
       client: opts.client,
@@ -77,6 +80,7 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     answer = outcome.answer;
     history = outcome.history;
     sqlCalls = outcome.sqlCalls;
+    chartCalls = outcome.chartCalls;
   } catch (e) {
     yield { type: 'error', message: e instanceof Error ? e.message : String(e) };
     return;
@@ -90,6 +94,11 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
       rows: call.result.rows,
       truncated: call.result.truncated,
     };
+  }
+
+  // Charts come after the SQL/rows activity and before the answer text (C5).
+  for (let i = 0; i < chartCalls.length; i++) {
+    yield { type: 'chart', n: i + 1, spec: chartCalls[i]! };
   }
 
   // Stream the answer in small chunks so the client renders it progressively.

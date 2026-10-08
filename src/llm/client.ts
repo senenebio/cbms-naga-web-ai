@@ -10,6 +10,7 @@
  */
 import type { LLMClient, Message, ToolSpec } from './types.js';
 import { serializeResult, type RunSelectResult } from './sql_tool.js';
+import { validateChartSpec, MAKE_CHART_TOOL_SPEC, MAKE_CHART_TOOL_NAME, type ChartSpec } from './chart.js';
 
 export const RUN_SELECT_TOOL_NAME = 'run_select';
 
@@ -91,6 +92,8 @@ export interface AskOutcome {
   /** Updated conversation history (last 6 messages, R8 / context-reduction C2). */
   history: Message[];
   sqlCalls: SqlCallRecord[];
+  /** Charts requested via make_chart, in creation order. */
+  chartCalls: ChartSpec[];
 }
 
 export interface AskQuestionOptions {
@@ -119,10 +122,11 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
     userMsg,
   ];
   const sqlCalls: SqlCallRecord[] = [];
+  const chartCalls: ChartSpec[] = [];
 
   let rounds = 0;
   for (;;) {
-    const resp = await opts.client.chat(messages, [RUN_SELECT_TOOL_SPEC]);
+    const resp = await opts.client.chat(messages, [RUN_SELECT_TOOL_SPEC, MAKE_CHART_TOOL_SPEC]);
     if (resp.tool_calls && resp.tool_calls.length > 0) {
       rounds += 1;
       if (rounds > maxToolRounds) {
@@ -140,20 +144,33 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
           throw new Error(`LLM exceeded ${maxToolRounds} tool rounds without a final answer`);
         }
         const history: Message[] = [...opts.history, userMsg, forced].slice(-6);
-        return { answer, history, sqlCalls };
+        return { answer, history, sqlCalls, chartCalls };
       }
       messages.push(resp);
       for (const tc of resp.tool_calls) {
         let toolContent: string;
-        try {
-          const args = JSON.parse(tc.arguments) as { sql?: unknown };
-          if (typeof args.sql !== 'string')
-            throw new Error('run_select requires a "sql" string argument');
-          const result = await opts.execute(args.sql);
-          sqlCalls.push({ sql: args.sql, result });
-          toolContent = serializeResult(result);
-        } catch (e) {
-          toolContent = JSON.stringify({ error: e instanceof Error ? e.message : String(e) });
+        if (tc.name === MAKE_CHART_TOOL_NAME) {
+          try {
+            const args = JSON.parse(tc.arguments) as Record<string, unknown>;
+            const spec = validateChartSpec(args);
+            chartCalls.push(spec);
+            toolContent = JSON.stringify({ status: 'ok', chart_id: chartCalls.length });
+          } catch (e) {
+            toolContent = JSON.stringify({ error: e instanceof Error ? e.message : String(e) });
+          }
+        } else if (tc.name === RUN_SELECT_TOOL_NAME) {
+          try {
+            const args = JSON.parse(tc.arguments) as { sql?: unknown };
+            if (typeof args.sql !== 'string')
+              throw new Error('run_select requires a "sql" string argument');
+            const result = await opts.execute(args.sql);
+            sqlCalls.push({ sql: args.sql, result });
+            toolContent = serializeResult(result);
+          } catch (e) {
+            toolContent = JSON.stringify({ error: e instanceof Error ? e.message : String(e) });
+          }
+        } else {
+          toolContent = JSON.stringify({ error: `unknown tool "${tc.name}"` });
         }
         messages.push({ role: 'tool', tool_call_id: tc.id, name: tc.name, content: toolContent });
       }
@@ -161,6 +178,6 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
     }
     const answer = resp.content ?? '';
     const history: Message[] = [...opts.history, userMsg, resp].slice(-6);
-    return { answer, history, sqlCalls };
+    return { answer, history, sqlCalls, chartCalls };
   }
 }
