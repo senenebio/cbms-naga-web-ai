@@ -6,14 +6,16 @@
  *
  * Source:  data/warehouse/{person,household,barangay}.parquet
  *          data/2024-CBMS-Data-Dictionary.json
+ *          data/naga-barangays.geojson   (optional; skipped if absent)
  * Dest:    web/public/data/{person,household,barangay}.parquet
  *          web/public/data/2024-CBMS-Data-Dictionary.json
+ *          web/public/data/naga-barangays.geojson
  *
  * `web/public/data/` is gitignored (build-generated). Run via
  * `npm run prebuild:web` (automatic before `build:web`) or directly:
  *   node scripts/copy-data.mjs
  */
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { access, cp, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -36,6 +38,17 @@ async function main() {
   await cp(dictSource, join(destDir, '2024-CBMS-Data-Dictionary.json'));
 
   console.log(`[copy-data] Copied ${files.length} parquet files + dictionary → web/public/data/`);
+
+  // Barangay boundaries for the SVG choropleth (map feature, T1.3). The asset
+  // is committed in T1.2; until then this is a no-op so the build stays green.
+  const geojsonSource = join(root, 'data', 'naga-barangays.geojson');
+  try {
+    await access(geojsonSource);
+    await cp(geojsonSource, join(destDir, 'naga-barangays.geojson'));
+    console.log('[copy-data] Copied naga-barangays.geojson → web/public/data/');
+  } catch {
+    console.log('skip: data/naga-barangays.geojson not present (expected until T1.2)');
+  }
 }
 
 main().catch((err) => {
