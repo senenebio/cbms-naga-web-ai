@@ -1,0 +1,42 @@
+{
+  "name": "cbms-naga-web-static",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CBMS Naga City — pure-static, browser-only AI interpretation demo (duckdb-wasm + BYOK/local LLM)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:web": "vite web",
+    "prebuild:web": "node scripts/copy-data.mjs",
+    "build:web": "vite build web",
+    "start": "npm run build:web && vite preview web",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev65.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/react-test-renderer": "^19.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.0",
+    "react-test-renderer": "^18.3.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^5.4.19",
+    "vitest": "^3.2.7"
+  }
+}

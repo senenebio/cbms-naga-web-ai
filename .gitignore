@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+web/dist/
+# Build-generated data bundle (copied from data/ by the build step)
+web/public/data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Tooling output
+graphify-out/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
