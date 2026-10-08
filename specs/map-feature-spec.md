@@ -14,7 +14,24 @@ offline, with **no new dependencies**.
 
 | # | Decision |
 |---|---|
-| M1 | **Hand-rolled SVG choropleth** — no map/chart library (extends the I4 "no chart lib" decision from the parent spec). |
+| M1 | **Hand-rolled SVG choropleth** — no map library. Recharts (added by `advanced-charts-spec`) has no geo/choropleth component, so the map is hand-rolled SVG regardless. |
+
+## Relationship to `make_chart` (advanced-charts-spec)
+
+The project now has an LLM `make_chart` tool (Recharts: bar/line/area/pie/scatter,
+code-split, renders after the answer text). The map is **complementary, not competing**:
+
+- **`make_chart` = non-spatial** (rankings, trends, share, correlations — the LLM
+  decides). **Map = spatial** (where in Naga City) — it adds the geographic context
+  Recharts cannot express. Both may appear in the same answer: the chart inline
+  after the text, the map behind the per-result "Show map" toggle.
+- The map is **UI-driven, not an LLM tool** — no prompt changes, no new tool spec.
+  The trigger is purely the result's columns (`code`/`barangay` + numeric col).
+- **Theming follows the `ChartBlock` pattern:** `BarangayMap` takes a `theme` prop
+  (JS palette mirroring the CSS custom properties, forwarded from `ChatPanel`),
+  keeping it testable under react-test-renderer.
+- No code-splitting needed for the map itself (no new bundle weight); it stays a
+  normal import — small compared to the ~446 KB chart chunk.
 | M2 | **Explicit affordance** — a "Show map" control appears on applicable results; the map is hidden until requested (no auto-render). |
 | M3 | **Hover + click detail** — hover shows a tooltip (name + value); click pins a barangay and shows a detail row (name, value, urban/rural). No chat-driving filter. |
 | M4 | **New static data asset** — `data/naga-barangays.geojson` (simplified GeoJSON, committed, served like the parquets). |
@@ -75,7 +92,8 @@ offline, with **no new dependencies**.
 
 ## Constraints
 
-- No new dependencies; no `package.json` changes.
+- No new dependencies beyond `recharts` (already present via `advanced-charts-spec`);
+  no `package.json` changes for this feature.
 - SQL guardrails, PII allowlists, and view shapes unchanged.
 - No `node:` imports in `src/map/*` (browser-bundled).
 - Map reads only data the LLM tool loop already returned — never queries itself.
@@ -124,7 +142,7 @@ Each task is ≤ ~1 hour; every task ends with the file(s) named done and `npm t
 - [ ] **T3.5 Metric selector** — when the result has 2+ numeric columns, native `<select>` picks the mapped column; 1 column → no selector.
 - [ ] **T3.6 "Show map" trigger** — ChatPanel result section: detect applicable results (`code`/`barangay` + numeric col); per-result toggle, map inline, collapsed by default.
 - [ ] **T3.7 Component tests** — fixture GeoJSON: 27 paths render; click updates detail row; non-geographic result shows no trigger (react-test-renderer, no network).
-- [ ] **T3.8 CSS** — fills, tooltip, selection outline, detail row, legend (light + dark via `theme.ts`).
+- [ ] **T3.8 CSS + theme prop** — fills, tooltip, selection outline, detail row, legend; `theme` prop with JS palette mirroring CSS vars (same pattern as `ChartBlock`), light + dark.
 
 ### P4 — Polish
 - [ ] **T4.1 Dark-mode tuning** — verify contrast of fills/legend/detail in both themes.
