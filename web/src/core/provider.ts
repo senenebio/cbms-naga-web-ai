@@ -1,11 +1,12 @@
 /**
- * Phase E — provider resolution from `localStorage` BYOK (decisions 5/7).
+ * Phase E — provider resolution from `localStorage` BYOK.
  *
  * The Settings dialog persists a raw settings payload under
  * `PROVIDER_STORAGE_KEY`; `resolveProvider()` normalizes it with the
- * shared `normalizeProviderConfig()` (preset defaults + validation) and
- * builds the `fetch`-based `LLMClient`. No mock in the UI path — the
- * only outcomes are `configured` or `unconfigured`.
+ * shared `normalizeProviderConfig()` (single OpenAI-compatible endpoint:
+ * Base URL + API key + Model) and builds the `fetch`-based `LLMClient`.
+ * No mock in the UI path — the only outcomes are `configured` or
+ * `unconfigured`.
  */
 import {
   maskedView,

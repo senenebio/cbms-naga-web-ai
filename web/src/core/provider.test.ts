@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clearStoredConfig,
   PROVIDER_STORAGE_KEY,
+  readStoredConfig,
   resolveProvider,
   saveStoredConfig,
   type KeyValueStorage,
@@ -36,32 +37,42 @@ describe('core/provider.ts (localStorage BYOK)', () => {
     expect(resolveProvider(storage)).toEqual({ status: 'unconfigured' });
   });
 
-  it('resolves an openai BYOK config with a masked key', () => {
+  it('is unconfigured for the legacy preset shape (regression)', () => {
+    const storage = stubStorage();
+    storage.setItem(
+      PROVIDER_STORAGE_KEY,
+      JSON.stringify({ provider: 'openrouter', apiKey: 'sk-x', model: 'm' }),
+    );
+    expect(resolveProvider(storage)).toEqual({ status: 'unconfigured' });
+  });
+
+  it('resolves a configured endpoint with a masked key', () => {
     const storage = stubStorage();
     saveStoredConfig(
-      { provider: 'openai', apiKey: 'sk-abc1234567890', model: 'gpt-4o-mini' },
+      { baseUrl: 'http://localhost:11434/v1', apiKey: 'sk-abc1234567890', model: 'llama3.1' },
       storage,
     );
     const resolved = resolveProvider(storage);
     expect(resolved.status).toBe('configured');
     if (resolved.status !== 'configured') return;
-    expect(resolved.config.baseUrl).toBe('https://api.openai.com/v1');
-    expect(resolved.config.model).toBe('gpt-4o-mini');
+    expect(resolved.config.baseUrl).toBe('http://localhost:11434/v1');
+    expect(resolved.config.model).toBe('llama3.1');
     expect(resolved.masked.keyMasked).toBe(maskKey('sk-abc1234567890'));
     expect(resolved.masked.keyMasked).not.toBe('sk-abc1234567890');
     expect(typeof resolved.client.chat).toBe('function');
   });
 
-  it('applies the local-provider preset (baseUrl + dummy key) and clears on demand', () => {
+  it('defaults a missing key to "noop" and clears on demand', () => {
     const storage = stubStorage();
-    saveStoredConfig({ provider: 'local', model: 'llama3.1' }, storage);
+    saveStoredConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' }, storage);
     const resolved = resolveProvider(storage);
     expect(resolved.status).toBe('configured');
     if (resolved.status !== 'configured') return;
-    expect(resolved.config.baseUrl).toBe('http://localhost:11434/v1');
-    expect(resolved.config.apiKey).toBe('ollama');
+    expect(resolved.config.apiKey).toBe('noop');
+    expect(resolved.masked.keyMasked).toBeUndefined();
 
     clearStoredConfig(storage);
     expect(resolveProvider(storage)).toEqual({ status: 'unconfigured' });
+    expect(readStoredConfig(storage)).toBeNull();
   });
 });
