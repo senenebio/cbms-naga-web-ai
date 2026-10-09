@@ -452,6 +452,108 @@ body {
   color: var(--muted);
 }
 
+/* ---- map feature (choropleth) ---- */
+.map-section {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 8px 10px;
+}
+.map-toggle {
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--ink);
+  border-radius: 8px;
+  font-size: 12.5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.map-toggle:hover {
+  border-color: var(--accent);
+}
+.map-toggle[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+.barangay-map {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.map-metric select {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input);
+  color: var(--ink);
+  font-size: 12.5px;
+}
+.map-wrap {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.map-wrap svg {
+  display: block;
+  width: 100%;
+}
+.map-region {
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+.map-region:hover {
+  opacity: 0.85;
+}
+.map-region.selected {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.map-tooltip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.map-detail {
+  font-size: 13px;
+  color: var(--ink);
+}
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.map-legend-ramp {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #e3f2fd, #0d47a1);
+}
+.map-attr {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
 /* ---- LLM settings dialog ---- */
 .settings-overlay {
   position: fixed;

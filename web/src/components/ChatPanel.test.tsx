@@ -138,6 +138,94 @@ describe('ChatPanel', () => {
     expect(text).toContain('Households by barangay');
   }, 10000);
 
+  it('shows a "Show map" trigger for a geographic result (code + numeric)', async () => {
+    const engine = stubEngine(
+      [
+        [1, 'ABELLA', 100],
+        [2, 'BAGUMBAYAN NORTE', 200],
+      ],
+      ['code', 'barangay', 'hh'],
+    );
+    const llm = new StubLlm({ answer: 'Households by barangay.' });
+    tree = createRenderer.create(
+      React.createElement(ChatPanel, {
+        engine,
+        client: llm,
+        onOpenSettings: () => {},
+      }),
+    );
+
+    const showSqlBtn = tree.root.findByProps({ 'aria-pressed': false });
+    act(() => {
+      showSqlBtn.props.onClick();
+    });
+
+    setDraft(tree.root, 'Households by barangay?');
+    submit(tree.root);
+    await flush();
+    await flush();
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('Raw rows');
+    expect(text).toContain('Show map');
+  }, 10000);
+
+  it('shows the "Show map" trigger for a geographic result WITHOUT toggling Show SQL', async () => {
+    const engine = stubEngine(
+      [
+        [1, 'ABELLA', 100],
+        [2, 'BAGUMBAYAN NORTE', 200],
+      ],
+      ['code', 'barangay', 'hh'],
+    );
+    const llm = new StubLlm({ answer: 'Households by barangay.' });
+    tree = createRenderer.create(
+      React.createElement(ChatPanel, {
+        engine,
+        client: llm,
+        onOpenSettings: () => {},
+      }),
+    );
+
+    // Do NOT toggle Show SQL (it defaults off) — the map must still be reachable.
+    setDraft(tree.root, 'Households by barangay?');
+    submit(tree.root);
+    await flush();
+    await flush();
+
+    const text = JSON.stringify(tree.toJSON());
+    // The raw-rows table stays behind the toggle…
+    expect(text).not.toContain('Raw rows');
+    // …but the map trigger is not gated on it.
+    expect(text).toContain('Show map');
+  }, 10000);
+
+  it('shows no map trigger for a non-geographic result', async () => {
+    const engine = stubEngine([[100]], ['total']);
+    const llm = new StubLlm({ answer: 'Total: 100.' });
+    tree = createRenderer.create(
+      React.createElement(ChatPanel, {
+        engine,
+        client: llm,
+        onOpenSettings: () => {},
+      }),
+    );
+
+    const showSqlBtn = tree.root.findByProps({ 'aria-pressed': false });
+    act(() => {
+      showSqlBtn.props.onClick();
+    });
+
+    setDraft(tree.root, 'Total?');
+    submit(tree.root);
+    await flush();
+    await flush();
+
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).toContain('Raw rows');
+    expect(text).not.toContain('Show map');
+  }, 10000);
+
   it('New chat clears the conversation', async () => {
     const llm = new StubLlm({ answer: 'One household.' });
     tree = createRenderer.create(

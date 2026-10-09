@@ -18,6 +18,12 @@ the app is a static bundle you can host anywhere.
 - Five **demo-question chips** are preloaded to kick things off (e.g. "Rank the
   10 barangays by the share of household members who did not avail medical
   treatment despite being sick.").
+- **Barangay map** — when a result has a `code`/`barangay` column plus a numeric
+  metric, a **"Show map"** control appears in the result section. It renders a
+  choropleth of the 27 Naga City barangays (hover for a tooltip, click for a
+  detail row with urban/rural, a metric selector when there are 2+ numeric
+  columns). The map is grounded in the returned rows — it never invents values
+  (no data → neutral fill).
 
 ## Data source
 
@@ -87,7 +93,12 @@ npm run format       # prettier (write) / format:check
   (no `openai` SDK). Provider config is normalized from `localStorage`; keys
   are masked in the UI and never logged.
 - **UI** — chat + settings only (`web/src/App.tsx`, `ChatPanel`,
-  `SettingsDialog`, `AnswerMarkdown`, `ResultTable`).
+  `SettingsDialog`, `AnswerMarkdown`, `ResultTable`, `BarangayMap`).
+- **Map** — `src/map/geo.ts` (driver-free: GeoJSON parse, projection, matching,
+  color scale) + `web/src/components/BarangayMap.tsx` (SVG render, hover/click,
+  legend, metric selector). The 27 barangay geometries live in
+  `data/naga-barangays.geojson` (copied to `web/public/data/` at build; source
+  & attribution in that file).
 
 ### Guardrails (do not weaken)
 
@@ -106,12 +117,14 @@ src/                      # driver-free shared core (imported by web/ + tests)
   llm/                    #   sql_tool, client, provider, mock_client (test-only), types
   schema.ts               #   schema block / table facts
   data.ts                 #   dictionary import, PII allowlists, DEMO_COLUMNS, RURAL_BARANGAYS
+  map/geo.ts              #   GeoJSON parse / projection / matching / color scale (driver-free)
   wasm/                   #   WasmSqlEngine + openWarehouseWasm (Node + browser)
 web/
   src/                    # React app (chat + settings), browser core (worker, llm, provider)
   public/data/            # build-generated: copied parquets + dictionary (gitignored)
 data/
   warehouse/*.parquet     # source warehouse assets (person, household, barangay)
+  naga-barangays.geojson  # 27 barangay geometries (map choropleth; source & attribution inside)
   2024-CBMS-Data-Dictionary.json
 scripts/copy-data.mjs     # build step: source data → web/public/data/
 specs/browser-only-spec.md

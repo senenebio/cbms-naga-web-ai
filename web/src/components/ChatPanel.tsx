@@ -20,6 +20,8 @@ import type { Theme } from '../theme.js';
 import AnswerMarkdown from './AnswerMarkdown.js';
 import ChartBlock from './ChartBlock.js';
 import ResultTable from './ResultTable.js';
+import MapSection from './MapSection.js';
+import { isMapApplicable } from './BarangayMap.js';
 import { DEMO_QUESTIONS } from '../demoQuestions.js';
 
 const SHOW_SQL_KEY = 'cbms-show-sql';
@@ -272,18 +274,26 @@ export default function ChatPanel({
                     </div>
                   </details>
                 ))}
-              {showSql &&
-                m.rows.map((r) => (
-                  <details key={`rows-${r.n}`}>
-                    <summary>
-                      Raw rows {r.n} ({r.rows.length}
-                      {r.truncated ? '+' : ''} rows)
-                    </summary>
-                    <div className="body">
-                      <ResultTable columns={r.columns} rows={r.rows} truncated={r.truncated} />
-                    </div>
-                  </details>
-                ))}
+              {m.rows.map((r) =>
+                showSql || isMapApplicable(r.columns, r.rows) ? (
+                  <div key={`rows-${r.n}`} className="result-block">
+                    {showSql && (
+                      <details>
+                        <summary>
+                          Raw rows {r.n} ({r.rows.length}
+                          {r.truncated ? '+' : ''} rows)
+                        </summary>
+                        <div className="body">
+                          <ResultTable columns={r.columns} rows={r.rows} truncated={r.truncated} />
+                        </div>
+                      </details>
+                    )}
+                    {isMapApplicable(r.columns, r.rows) && (
+                      <MapSection columns={r.columns} rows={r.rows} theme={theme} />
+                    )}
+                  </div>
+                ) : null
+              )}
             </div>
           ),
         )}
