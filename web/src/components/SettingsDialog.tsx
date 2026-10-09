@@ -129,7 +129,9 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
               placeholder="http://localhost:11434/v1"
             />
             <small className="note">
-              Ollama / LM Studio / llama.cpp / any OpenAI-compatible endpoint
+              Any OpenAI-compatible endpoint — Ollama: <code>http://localhost:11434/v1</code> · LM
+              Studio: <code>http://localhost:1234/v1</code> · llama.cpp: <code>http://localhost:8080/v1</code>{' '}
+              · OpenRouter: <code>https://openrouter.ai/api/v1</code> · OpenAI: <code>https://api.openai.com/v1</code>
             </small>
           </label>
           <label>
