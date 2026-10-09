@@ -20,6 +20,8 @@ Replace the 3-provider preset system (`local` / `openrouter` / `openai`) with **
 | E6 | **BaseUrl: validate only.** Must be a valid http(s) URL; no rewriting (no trailing-slash strip, no `/v1` appending). UI shows a hint line with example endpoints. |
 | E7 | **Dialog copy.** Title stays "LLM settings"; the "Provider" radio fieldset is replaced by three plain fields (Base URL, API key, Model). |
 | E8 | **Wire layer untouched.** `FetchLlmClient`, `toApiMessages`, `askQuestion`, tool specs, `chat.ts` — no changes. |
+| E9 | **Blank key preserves.** Saving with a blank API-key field keeps the previously stored key (dialog re-injects it from the stored payload); a typed key replaces it. `'noop'` is only the normalization default, never written by the dialog. |
+| E10 | **Minor contract clarifications.** `baseUrl`/`model` are trimmed (as today); `apiKey: null` counts as blank → `'noop'`; legacy = any payload with a `provider` property present (any value, incl. `null`); dialog suppresses the "Current key:" line when the resolved key is `'noop'`. |
 
 ## Contracts (what makes the tasks independent)
 
@@ -53,7 +55,7 @@ Replace the 3-provider preset system (`local` / `openrouter` / `openai`) with **
 **Task 5 — UI: Settings dialog** (`web/src/components/SettingsDialog.tsx`)
 - Remove radio group, `PROVIDER_LABELS`, `defaultModel`, preset imports.
 - Three fields: Base URL (placeholder `http://localhost:11434/v1` + hint: Ollama / LM Studio / llama.cpp / any OpenAI-compatible endpoint), API key (placeholder `noop`), Model (free text).
-- `buildPayload()` → `{ baseUrl, model, apiKey? }`; prefill from stored config; masked-key display kept.
+- `buildPayload()` → `{ baseUrl, model, apiKey? }`; **blank key field → omit `apiKey` and re-inject the previously stored key** (E9); prefill from stored config; masked-key display kept (suppressed for `'noop'`, E10).
 
 **Task 6 — Cleanup + app shell**
 - Delete `src/llm/free_models.ts` (grep confirms imports only in `provider.ts` + its test).
