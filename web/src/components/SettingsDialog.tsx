@@ -11,6 +11,7 @@ import {
   maskKey,
   normalizeProviderConfig,
 } from '../../../src/llm/provider.js';
+import { testLlmConnection } from '../core/llm.js';
 import {
   clearStoredConfig,
   readStoredConfig,
@@ -33,6 +34,7 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
   /** The previously stored key (kept out of the input so a blank field preserves it). */
   const [storedKey, setStoredKey] = useState<string | undefined>(undefined);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [testing, setTesting] = useState(false);
 
   // Prefill from the stored config (if any) on first render.
   useEffect(() => {
@@ -74,6 +76,22 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
       onSaved?.();
     } catch (e) {
       setNotice({ kind: 'error', text: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  /** Probe the endpoint with the current field values (no persistence). */
+  async function handleTest() {
+    setNotice(null);
+    try {
+      const payload = buildPayload();
+      const resolved = normalizeProviderConfig(payload);
+      setTesting(true);
+      await testLlmConnection(resolved);
+      setNotice({ kind: 'ok', text: `Endpoint OK — ${resolved.model} responded.` });
+    } catch (e) {
+      setNotice({ kind: 'error', text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -138,6 +156,9 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
         <div className="settings-actions">
           <button type="button" className="ask-btn" onClick={handleSave}>
             Save
+          </button>
+          <button type="button" onClick={handleTest} disabled={testing}>
+            {testing ? 'Testing…' : 'Test'}
           </button>
           <button type="button" onClick={handleClear}>
             Clear

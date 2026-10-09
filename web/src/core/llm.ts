@@ -39,6 +39,41 @@ interface ApiChatCompletionResponse {
   }[];
 }
 
+/**
+ * Probe an OpenAI-compatible endpoint with a minimal chat completion
+ * (Settings dialog "Test" button). Resolves on HTTP 2xx; throws an
+ * `Error` with an actionable message on non-2xx or network failure.
+ */
+export async function testLlmConnection(cfg: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) headers.Authorization = `Bearer ${cfg.apiKey}`;
+  const url = `${cfg.baseUrl.replace(/\/+$/, '')}/chat/completions`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+      }),
+    });
+  } catch (e) {
+    throw new Error(`Connection failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${body.slice(0, 300) || res.statusText}`);
+  }
+}
+
 export class FetchLlmClient implements LLMClient {
   private readonly model: string;
   private readonly baseUrl: string;
