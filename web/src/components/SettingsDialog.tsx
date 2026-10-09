@@ -152,6 +152,9 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
               onChange={(e) => setModel(e.target.value)}
               placeholder="any model name"
             />
+            <small className="note">
+              e.g. <code>ukisai/Swift-1.5-Qwen3.8-27B-GGUF:IQ3_XXS</code>
+            </small>
           </label>
         </div>
 
