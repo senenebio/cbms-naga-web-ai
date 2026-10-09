@@ -55,7 +55,7 @@ Create (browser core — must have NO `node:` or `@duckdb/node-api` imports):
 - `web/src/wasm/db.worker.ts` — Web Worker owning `DuckDBWASM` (Vite `?worker` import). Loads parquet via in-memory `FileSystem.putFileByPath` from fetched ArrayBuffers, then creates the same views with `read_parquet`.
 - `web/src/wasm/engine.ts` — `WasmSqlEngine` + `openWarehouseWasm()`.
 - `web/src/core/llm.ts` — `fetch`-based `LLMClient` (reuses `toApiMessages`, `RUN_SELECT_TOOL_SPEC`, `trimHistory`).
-- `web/src/core/provider.ts` — resolution: localStorage BYOK → unconfigured (mock is **test-only**, never in the UI). Providers: `local`, `openrouter`, `openai`. Reuses `normalizeProviderConfig`, `maskKey`, `PROVIDER_PRESETS`.
+- `web/src/core/provider.ts` — resolution: localStorage BYOK → unconfigured (mock is **test-only**, never in the UI). ~~Providers: `local`, `openrouter`, `openai`. Reuses `normalizeProviderConfig`, `maskKey`, `PROVIDER_PRESETS`.~~ → **superseded by [openai-endpoint-spec.md](openai-endpoint-spec.md)**: single OpenAI-compatible endpoint mode (`{ baseUrl, apiKey?, model }`), no provider presets.
 - `web/src/core/chat.ts` — ports `streamQuestion`/`systemForQuestion` (reuses `askQuestion`, `runSelect`).
 
 Refactor to be driver-free (importable by both Node and browser):
