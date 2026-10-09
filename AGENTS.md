@@ -35,4 +35,4 @@ Pure-static, browser-only AI interpretation demo for CBMS 2024 (Naga City) data:
 - Feature specs live in `specs/` — check the relevant spec's status before working in its area:
   - `browser-only-spec.md` (complete), `advanced-charts-spec.md` (complete),
     `map-feature-spec.md` (implemented; display under reconsideration),
-    `openai-endpoint-spec.md` (**pending** — provider presets being replaced)
+    `openai-endpoint-spec.md` (implemented — single OpenAI-compatible endpoint)

@@ -1,6 +1,6 @@
 # Plan: Single OpenAI-compatible endpoint (replaces provider presets)
 
-**Status:** pending (not started)
+**Status:** implemented (2026-10-09; Task 7 manual verification pending)
 **Date:** 2026-10-09
 **Parent spec:** `browser-only-spec.md` (complete; this is a follow-on revision)
 
