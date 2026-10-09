@@ -153,8 +153,7 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
               placeholder="any model name"
             />
             <small className="note">
-              e.g. <code>ukisai/Swift-1.5-Qwen3.8-27B-GGUF:IQ3_XXS</code> or <code>openrouter/free</code> or{' '}
-              <code>deepseek-v4-flash-free</code>
+              e.g. <code>ukisai/Swift-1.5-Qwen3.8-27B-GGUF:IQ3_XXS</code> or <code>openrouter/free</code>
             </small>
           </label>
         </div>
