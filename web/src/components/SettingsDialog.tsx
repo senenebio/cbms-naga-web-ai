@@ -140,7 +140,7 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="noop"
+              placeholder="secret-BYOK-secret"
             />
             {storedKey ? <small className="note">Current key: {maskKey(storedKey)}</small> : null}
           </label>

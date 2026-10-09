@@ -54,7 +54,7 @@ Replace the 3-provider preset system (`local` / `openrouter` / `openai`) with **
 
 **Task 5 — UI: Settings dialog** (`web/src/components/SettingsDialog.tsx`)
 - Remove radio group, `PROVIDER_LABELS`, `defaultModel`, preset imports.
-- Three fields: Base URL (placeholder `http://localhost:11434/v1` + hint: Ollama / LM Studio / llama.cpp / any OpenAI-compatible endpoint), API key (placeholder `noop`), Model (free text).
+- Three fields: Base URL (placeholder `http://localhost:11434/v1` + hint: Ollama / LM Studio / llama.cpp / any OpenAI-compatible endpoint), API key (placeholder `secret-BYOK-secret`), Model (free text).
 - `buildPayload()` → `{ baseUrl, model, apiKey? }`; **blank key field → omit `apiKey` and re-inject the previously stored key** (E9); prefill from stored config; masked-key display kept (suppressed for `'noop'`, E10).
 
 **Task 6 — Cleanup + app shell**
