@@ -1,5 +1,5 @@
 {
-  "name": "cbms-naga-web-static",
+  "name": "cbms-naga-web-ai",
   "version": "0.1.0",
   "private": true,
   "description": "CBMS Naga City — pure-static, browser-only AI interpretation demo (duckdb-wasm + BYOK/local LLM)",

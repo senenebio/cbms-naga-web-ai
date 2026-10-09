@@ -1,6 +1,6 @@
 # Project Overview
 
-- **Name:** cbms-naga-web-static
+- **Name:** cbms-naga-web-ai
 - **Stack:** Vite + React 18 + TypeScript, `duckdb-wasm` (Web Worker), Vitest, react-markdown. **No runtime server** — pure static site.
 - **Description:** A pure-static, browser-only AI interpretation demo for CBMS 2024 (Naga City) data. DuckDB runs in the browser via `duckdb-wasm` over 3 bundled parquet files; a BYOK / local LLM is called directly from the browser with tool (function) calling to run read-only SQL. The UI is **chat + settings only** (no workspace panel).
 
