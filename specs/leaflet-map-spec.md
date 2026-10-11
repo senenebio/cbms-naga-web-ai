@@ -112,11 +112,6 @@ row, legend, metric selector) and theming model.
 ## Open items (deferred)
 
 - **"Show map" placement** — remains open (parent spec); explicitly out of scope for this spec (L7).
-- **Polygon geometry quality (gaps)** — DEFERRED, note only. Adjacent barangay polygons show visible gaps.
-  - **Provenance (investigated 2026-10-11):** the gaps come from the source's own simplification, not a conversion bug. The documented source — bettergov.ph dataset 23 (derived from PSA PSGC + NAMRIA) — is published **only** at tolerance `t0p005`, and that file is **byte-identical** to the bundled asset (27/27 geometries match; ~5 pts per barangay). So re-converting from the source changes nothing.
-  - **Finer-source options checked:** bettergov has only that one `t0p005` release; **OpenStreetMap has 0** `admin_level=8` (barangay) boundaries for Naga City; NAMRIA raw boundaries are authoritative full-resolution but require a formal data request (no direct download).
-  - **Attempted fix (no visible effect):** a one-time `mapshaper -clean` (topology fix / sliver removal, 134 → 229 pts) was applied and verified in the browser — the gaps are unchanged, so the asset was reverted to the original. `-clean` removes slivers; it does not snap the shared boundaries that cause the gaps.
-  - **Real fix (later):** obtain a finer-tolerance source (finer NAMRIA/bettergov release) and re-convert. Revisit later.
 - **Lat/long columns surface as map metrics** — DEFERRED, note only. The metric `<select>` lists longitude/latitude (coordinate) columns as selectable choropleth metrics, which are not meaningful map values. They should be excluded from `numericColumns` (e.g. by column name). Revisit later.
 - **Polygon fill too opaque** — DEFERRED, note only. The choropleth fill obscures the basemap's data/labels (streets, POIs, water). Consider lowering the fill opacity (and/or raising the stroke) so the basemap shows through. Revisit later.
 
@@ -124,3 +119,4 @@ row, legend, metric selector) and theming model.
 
 - **Tile retry policy** — finalized in P3: threshold 4 (drop the tile layer after 4 failures at one zoom level; sticky; fresh retry per mount).
 - **Bundle size check** — confirmed in P1: lazy chunk 153 KB (44.5 KB gzip), same class as the recharts chunk.
+- **Polygon geometry quality (gaps)** — RESOLVED. The gaps came from the prior source's `t0p005` oversimplification (~5 pts/barangay). Re-converted `data/naga-barangays.geojson` from a finer source — **geoph (OSSPhilippines, MIT)** — at 10–58 pts/barangay (662 pts total; 19 KB). Joined to the warehouse by name (25 exact + 2 accent variants: `Concepcion Pequeo`→`CONCEPCION PEQUEÑA`, `Peafrancia`→`PEÑAFRANCIA`); all 27 `code`→`name` match the warehouse and every centroid is within 2.6 km of its warehouse lat/lon. `metadata.source` records the new provenance. (bettergov #23 was only `t0p005`; OSM has no Naga barangay boundaries — that path was exhausted before this.)
