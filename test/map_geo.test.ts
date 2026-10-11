@@ -7,13 +7,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseBarangayGeojson,
-  projectToSvg,
   matchRows,
   colorScale,
+  isMapApplicable,
   shouldDropTileLayer,
   MapGeoError,
   type BarangayFeature,
-  type ViewBox,
 } from '../src/map/geo.js';
 
 // ---------------------------------------------------------------------------
@@ -228,124 +227,6 @@ describe('parseBarangayGeojson', () => {
 });
 
 // ---------------------------------------------------------------------------
-// projectToSvg
-// ---------------------------------------------------------------------------
-
-describe('projectToSvg', () => {
-  const VB: ViewBox = { width: 800, height: 600 };
-
-  it('returns an empty array for zero features', () => {
-    expect(projectToSvg([], VB)).toEqual([]);
-  });
-
-  it('produces a valid SVG path per feature', () => {
-    const features = parseBarangayGeojson(VALID_FC);
-    const paths = projectToSvg(features, VB);
-    expect(paths).toHaveLength(2);
-
-    // Each path should start with M and end with Z
-    for (const d of paths) {
-      expect(d).toMatch(/^M /);
-      expect(d).toMatch(/ Z$/);
-      // No NaN or Infinity
-      expect(d).not.toContain('NaN');
-      expect(d).not.toContain('Infinity');
-    }
-  });
-
-  it('is deterministic (same input → same output)', () => {
-    const features = parseBarangayGeojson(VALID_FC);
-    const a = projectToSvg(features, VB);
-    const b = projectToSvg(features, VB);
-    expect(a).toEqual(b);
-  });
-
-  it('produces coordinates within the viewBox (with padding)', () => {
-    const features = parseBarangayGeojson(VALID_FC);
-    const paths = projectToSvg(features, VB);
-
-    // Extract all numeric coordinates from the path strings.
-    for (const d of paths) {
-      const nums = d.match(/-?\d+\.?\d*/g);
-      expect(nums).not.toBeNull();
-      for (const n of nums!) {
-        const v = Number(n);
-        expect(v).toBeGreaterThanOrEqual(0);
-        expect(v).toBeLessThanOrEqual(VB.width); // x
-      }
-    }
-  });
-
-  it('multi-polygon produces multiple subpaths in one d string', () => {
-    const features = parseBarangayGeojson(VALID_FC);
-    const paths = projectToSvg(features, VB);
-    // Feature 1 is MultiPolygon with 2 sub-polygons → 2 subpaths
-    const multiPath = paths[1]!;
-    const mCount = (multiPath.match(/\bM /g) ?? []).length;
-    expect(mCount).toBe(2);
-  });
-
-  it('handles a degenerate bbox (single point) without NaN/Infinity', () => {
-    const singlePoint: BarangayFeature[] = [
-      { code: '01', name: 'Dot', rings: [[[123.9, 13.6]]] },
-    ];
-    const paths = projectToSvg(singlePoint, VB);
-    expect(paths).toHaveLength(1);
-    expect(paths[0]).not.toContain('NaN');
-    expect(paths[0]).not.toContain('Infinity');
-  });
-
-  it('handles zero-width bbox (all same lon)', () => {
-    const zeroWidth: BarangayFeature[] = [
-      { code: '01', name: 'Line', rings: [[[100, 10], [100, 20]]] },
-    ];
-    const paths = projectToSvg(zeroWidth, VB);
-    expect(paths).toHaveLength(1);
-    expect(paths[0]).not.toContain('NaN');
-    expect(paths[0]).not.toContain('Infinity');
-  });
-
-  it('handles zero-height bbox (all same lat)', () => {
-    const zeroHeight: BarangayFeature[] = [
-      { code: '01', name: 'Line', rings: [[[10, 10], [20, 10]]] },
-    ];
-    const paths = projectToSvg(zeroHeight, VB);
-    expect(paths).toHaveLength(1);
-    expect(paths[0]).not.toContain('NaN');
-    expect(paths[0]).not.toContain('Infinity');
-  });
-
-  it('flips Y axis (north = higher lat → smaller SVG y)', () => {
-    // Two points: (0,0) and (0,1). lat=1 is north → should have smaller y.
-    const features: BarangayFeature[] = [
-      { code: '01', name: 'V', rings: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]] },
-    ];
-    const paths = projectToSvg(features, VB);
-    const d = paths[0]!;
-
-    // Extract all coordinate pairs
-    const coords: Array<[number, number]> = [];
-    const re = /M ([\d.-]+) ([\d.-]+)|L ([\d.-]+) ([\d.-]+)/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(d)) !== null) {
-      if (m[1] !== undefined) {
-        coords.push([Number(m[1]), Number(m[2])]);
-      } else {
-        coords.push([Number(m[3]), Number(m[4])]);
-      }
-    }
-
-    // Find the y-values for the two lat=0 points and the lat=1 point
-    // Point (0,0) should have larger y than point (0,1) in SVG coords
-    const yAtLat0 = coords.filter(([_, y]) => y > VB.height / 2);
-    const yAtLat1 = coords.filter(([_, y]) => y < VB.height / 2);
-    // At least one point at each latitude level
-    expect(yAtLat0.length).toBeGreaterThan(0);
-    expect(yAtLat1.length).toBeGreaterThan(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // matchRows
 // ---------------------------------------------------------------------------
 
@@ -519,6 +400,28 @@ describe('colorScale', () => {
       const c = scale(v);
       expect(c).toMatch(/^(#[\da-fA-F]{6}|rgb\(\d+, \d+, \d+\))$/);
     }
+  });
+});
+
+describe('isMapApplicable', () => {
+  it('is true for a code column + a numeric metric', () => {
+    expect(isMapApplicable(['code', 'barangay', 'hh'], [[1, 'A', 10]])).toBe(true);
+  });
+
+  it('is true for a barangay key (no code column) + a numeric metric', () => {
+    expect(isMapApplicable(['barangay', 'hh'], [['A', 10]])).toBe(true);
+  });
+
+  it('is false when there is no key column', () => {
+    expect(isMapApplicable(['name', 'hh'], [['A', 10]])).toBe(false);
+  });
+
+  it('is false when the key column is the only numeric column', () => {
+    expect(isMapApplicable(['code', 'barangay'], [[1, 'A']])).toBe(false);
+  });
+
+  it('accepts numeric strings as metric values', () => {
+    expect(isMapApplicable(['code', 'hh'], [[1, '10']])).toBe(true);
   });
 });
 

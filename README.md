@@ -93,12 +93,13 @@ npm run format       # prettier (write) / format:check
   (no `openai` SDK). Provider config is normalized from `localStorage`; keys
   are masked in the UI and never logged.
 - **UI** — chat + settings only (`web/src/App.tsx`, `ChatPanel`,
-  `SettingsDialog`, `AnswerMarkdown`, `ResultTable`, `BarangayMap`).
-- **Map** — `src/map/geo.ts` (driver-free: GeoJSON parse, projection, matching,
-  color scale) + `web/src/components/BarangayMap.tsx` (SVG render, hover/click,
-  legend, metric selector). The 27 barangay geometries live in
-  `data/naga-barangays.geojson` (copied to `web/public/data/` at build; source
-  & attribution in that file).
+  `SettingsDialog`, `AnswerMarkdown`, `ResultTable`, `LeafletBarangayMap`).
+- **Map** — `src/map/geo.ts` (driver-free: GeoJSON parse, matching, color
+  scale, tile-failure decision) + `web/src/components/LeafletBarangayMap.tsx`
+  (Leaflet choropleth, OSM basemap + graceful offline fallback, hover/click,
+  legend, metric selector; loaded lazily in its own chunk). The 27 barangay
+  geometries live in `data/naga-barangays.geojson` (copied to
+  `web/public/data/` at build; source & attribution in that file).
 
 ### Guardrails (do not weaken)
 

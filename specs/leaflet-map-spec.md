@@ -1,6 +1,6 @@
 # Feature Spec — Leaflet Barangay Map (Replacing SVG Choropleth)
 
-**Status:** draft (2026-10-11) — research done, no implementation yet
+**Status:** implemented (2026-10-11) — P1–P4 closed on branch `feat/leaflet-barangay-map`
 **Date:** 2026-10-11
 **Parent spec:** `map-feature-spec.md` (P1–P4 implemented; open item "Map display rework" — this spec addresses it)
 
@@ -87,27 +87,27 @@ row, legend, metric selector) and theming model.
 ## Task breakdown (working checklist)
 
 ### P1 — Skeleton
-- [ ] **T1.1 Deps** — `npm i leaflet` + `npm i -D @types/leaflet` (owner-approved per L1).
-- [ ] **T1.2 `LeafletBarangayMap.tsx`** — lazy module: div+ref, `L.map` init/cleanup, `fitBounds` from GeoJSON, OSM `tileLayer` with policy-compliant URL + attribution.
-- [ ] **T1.3 Wire trigger** — `MapSection`/result-section uses `React.lazy` + `Suspense` (loading spinner); fetch-GeoJSON failure still hides the map entirely.
-- [ ] **T1.4 Gate** — `npm test` + `npm run lint` green; manual: map opens, tiles load, zoom/pan.
+- [x] **T1.1 Deps** — `npm i leaflet` + `npm i -D @types/leaflet` (owner-approved per L1).
+- [x] **T1.2 `LeafletBarangayMap.tsx`** — lazy module: div+ref, `L.map` init/cleanup, `fitBounds` from GeoJSON, OSM `tileLayer` with policy-compliant URL + attribution.
+- [x] **T1.3 Wire trigger** — `MapSection`/result-section uses `React.lazy` + `Suspense` (loading spinner); fetch-GeoJSON failure still hides the map entirely.
+- [x] **T1.4 Gate** — `npm test` + `npm run lint` green; manual: map opens, tiles load, zoom/pan.
 
 ### P2 — Choropleth + interactions
-- [ ] **T2.1 Choropleth layer** — `L.geoJSON` fills from `colorScale`; unmatched codes neutral; hover `tooltip` (name + value).
-- [ ] **T2.2 Selection** — click pins (highlight style), detail row (name, value, urban/rural via `RURAL_BARANGAYS`); re-click/background clears.
-- [ ] **T2.3 Legend + metric selector** — HTML below the map; `<select>` for 2+ numeric columns (key column excluded); single column → no selector.
-- [ ] **T2.4 Tests** — wrapper tests (trigger, detail-row state, selector presence); `npm test` + `npm run lint` green.
+- [x] **T2.1 Choropleth layer** — `L.geoJSON` fills from `colorScale`; unmatched codes neutral; hover `tooltip` (name + value).
+- [x] **T2.2 Selection** — click pins (highlight style), detail row (name, value, urban/rural via `RURAL_BARANGAYS`); re-click/background clears.
+- [x] **T2.3 Legend + metric selector** — HTML below the map; `<select>` for 2+ numeric columns (key column excluded); single column → no selector.
+- [x] **T2.4 Tests** — wrapper tests (trigger, detail-row state, selector presence); `npm test` + `npm run lint` green.
 
 ### P3 — Fallback + theming
-- [ ] **T3.1 Tile fallback** — pure `shouldDropTileLayer` + `tileerror` wiring; tile layer removed; "Basemap unavailable — polygons only" note; fresh retry per mount.
-- [ ] **T3.2 CSS theming** — light/dark: zoom control, attribution, tooltip, offline pane background; `theme` palette for legend/detail.
-- [ ] **T3.3 Attribution footer** — combined OSM + PSA/NAMRIA/bettergov line.
-- [ ] **T3.4 Gate** — `npm test` + `npm run lint` green; manual: kill network → tiles drop cleanly, map still usable.
+- [x] **T3.1 Tile fallback** — pure `shouldDropTileLayer` + `tileerror` wiring; tile layer removed; "Basemap unavailable — polygons only" note; fresh retry per mount.
+- [x] **T3.2 CSS theming** — light/dark: zoom control, attribution, tooltip, offline pane background; `theme` palette for legend/detail.
+- [x] **T3.3 Attribution footer** — combined OSM + PSA/NAMRIA/bettergov line.
+- [x] **T3.4 Gate** — `npm test` + `npm run lint` green; manual: kill network → tiles drop cleanly, map still usable.
 
 ### P4 — Cutover + docs
-- [ ] **T4.1 Remove SVG** — delete `BarangayMap.tsx` (+test), `projectToSvg` (+tests); fix imports.
-- [ ] **T4.2 Docs** — README map section updated; `map-feature-spec.md` "Map display rework" → resolved (point to this spec); "Show map" placement stays OPEN.
-- [ ] **T4.3 Final gate** — `npm test` + `npm run lint` + `npm run build:web` green; manual: online + offline, both themes, per-barangay chat question → "Show map".
+- [x] **T4.1 Remove SVG** — delete `BarangayMap.tsx` (+test), `projectToSvg` (+tests); fix imports.
+- [x] **T4.2 Docs** — README map section updated; `map-feature-spec.md` "Map display rework" → resolved (point to this spec); "Show map" placement stays OPEN.
+- [x] **T4.3 Final gate** — `npm test` + `npm run lint` + `npm run build:web` green; manual: online + offline, both themes, per-barangay chat question → "Show map".
 
 ## Open items
 

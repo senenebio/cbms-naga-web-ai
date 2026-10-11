@@ -20,7 +20,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   colorScale,
+  keyColumn,
   matchRows,
+  numericColumns,
   parseBarangayGeojson,
   shouldDropTileLayer,
   type BarangayFeature,
@@ -55,38 +57,6 @@ const PALETTES: Record<Theme, MapPalette> = {
   light: { ink: '#1f2430', muted: '#6b7280', border: '#e2e5ea', panel: '#ffffff', surface: '#fbfcfe' },
   dark: { ink: '#e8ecf2', muted: '#9aa3b2', border: '#2a3140', panel: '#171c24', surface: '#1a2029' },
 };
-
-/** A result is mappable when it has a code/barangay key column + a numeric metric. */
-export function isMapApplicable(columns: string[], rows: unknown[][]): boolean {
-  return keyColumn(columns) !== null && numericColumns(columns, rows).length > 0;
-}
-
-/** Prefer the `code` column, else the `barangay` name column. */
-function keyColumn(columns: string[]): string | null {
-  if (columns.includes('code')) return 'code';
-  if (columns.includes('barangay')) return 'barangay';
-  return null;
-}
-
-function isNumericValue(v: unknown): boolean {
-  if (typeof v === 'number') return Number.isFinite(v);
-  if (typeof v === 'string' && v.trim() !== '') return Number.isFinite(Number(v));
-  return false;
-}
-
-/**
- * Metric columns: columns with at least one numeric value, excluding the key
- * column (a bare integer `code` is not a mappable metric).
- */
-function numericColumns(columns: string[], rows: unknown[][]): string[] {
-  const key = keyColumn(columns);
-  return columns
-    .filter((c) => c !== key)
-    .filter((c) => {
-      const i = columns.indexOf(c);
-      return rows.some((r) => isNumericValue(r[i]));
-    });
-}
 
 function formatValue(v: number | null): string {
   return v === null ? 'n/a' : String(v);

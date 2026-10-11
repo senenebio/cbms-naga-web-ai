@@ -1,7 +1,7 @@
 # Feature Spec — Barangay Map (SVG Choropleth)
 
-**Status:** P1–P4 implemented (2026-10-09; 190 tests + lint + build green). **Open:** the map *display* is under reconsideration — the owner is unhappy with the current inline-SVG choropleth and may shift to **Leaflet** in the future; the "Show map" placement is an open question (see Open items). The SVG map ships as a working baseline.
-**Date:** 2026-10-08 (P1 closed 2026-10-09; P3 + P4 closed 2026-10-09; display rework + placement flagged 2026-10-09)
+**Status:** P1–P4 implemented (2026-10-09). The map *display* was reworked to **Leaflet** (2026-10-11 — see `leaflet-map-spec.md`); the "Show map" placement remains an open question (see Open items).
+**Date:** 2026-10-08 (P1 closed 2026-10-09; P3 + P4 closed 2026-10-09; display rework + placement flagged 2026-10-09; display rework resolved 2026-10-11 via Leaflet)
 **Parent spec:** `browser-only-spec.md` (complete; this is a follow-on feature)
 
 ## Goal
@@ -153,6 +153,6 @@ Each task is ≤ ~1 hour; every task ends with the file(s) named done and `npm t
 ## Open items
 
 - ~~GeoJSON source, license, and attribution line (display in map footer).~~ **Resolved 2026-10-09:** bettergov.ph #23 (MIT) ← PSA PSGC + NAMRIA. Footer line: “PSGC © PSA · Boundaries © NAMRIA · Data: Manuel Balmeo / bettergov.ph (MIT)”.
-- **Map display rework (OPEN — flagged 2026-10-09):** the owner is unhappy with the current inline-SVG choropleth rendering and **may shift to Leaflet** in the future. The current SVG map ships as a working baseline; the display is a candidate for rework. *No decision yet.*
+- ~~**Map display rework (OPEN — flagged 2026-10-09):** the owner is unhappy with the current inline-SVG choropleth rendering and **may shift to Leaflet** in the future.~~ **Resolved 2026-10-11:** replaced with a **Leaflet** choropleth — see `specs/leaflet-map-spec.md`. The hand-rolled SVG `BarangayMap` was removed.
 - **"Show map" placement (OPEN — reopened 2026-10-09):** the trigger currently sits in the per-result `result-block` (below the raw-rows table; decoupled from the Show SQL toggle since 2026-10-09), which reads as part of the SQL/rows area. Candidate placements: (A) promote to a first-class visualization after the answer/chart, (B) keep it in the rows block but visually separate from the raw-rows `<details>`, (C) attach it to the chart. *No decision yet.*
 - ~~Metric selector styling when a result has 2+ numeric columns.~~ **Resolved 2026-10-09:** a small native `<select>` labeled "Metric:" above the map; the bare integer `code` key column is excluded from the options.

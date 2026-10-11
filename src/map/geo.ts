@@ -6,9 +6,10 @@
  *
  * Functions:
  * - `parseBarangayGeojson` — parse a GeoJSON FeatureCollection into typed features
- * - `projectToSvg` — project geographic coordinates into SVG path `d` strings
  * - `matchRows` — match warehouse result rows to features by code
  * - `colorScale` — sequential light→dark color scale for choropleth fills
+ * - `shouldDropTileLayer` — basemap tile-failure decision (Leaflet map)
+ * - `isMapApplicable` — result-shape check (key column + numeric metric)
  */
 
 // ---------------------------------------------------------------------------
@@ -27,11 +28,6 @@ export interface BarangayFeature {
    * flattened into this single array (each ring → one SVG subpath).
    */
   rings: number[][][];
-}
-
-export interface ViewBox {
-  width: number;
-  height: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,95 +176,6 @@ function validateRings(raw: unknown, featIdx: number): number[][][] {
 }
 
 // ---------------------------------------------------------------------------
-// projectToSvg
-// ---------------------------------------------------------------------------
-
-/**
- * Project geographic features into per-feature SVG path `d` strings.
- *
- * Simple equirectangular fit: x = lon, y = -lat (north-up), scaled into
- * the viewBox with 5 % padding on each side. Multi-polygon features produce
- * multiple subpaths in one `d` string. Deterministic output.
- *
- * Degenerate bboxes (single point / zero width or height) map to the
- * viewBox center — no NaN/Infinity.
- */
-export function projectToSvg(features: BarangayFeature[], viewBox: ViewBox): string[] {
-  if (features.length === 0) return [];
-
-  // Compute the geographic bounding box.
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-
-  for (const f of features) {
-    for (const ring of f.rings) {
-      for (const pt of ring) {
-        const lon = pt[0];
-        const lat = pt[1];
-        if (lon !== undefined) {
-          if (lon < minX) minX = lon;
-          if (lon > maxX) maxX = lon;
-        }
-        if (lat !== undefined) {
-          if (lat < minY) minY = lat;
-          if (lat > maxY) maxY = lat;
-        }
-      }
-    }
-  }
-
-  // No valid points → empty paths.
-  if (minX === Infinity) {
-    return features.map(() => '');
-  }
-
-  const geoW = maxX - minX;
-  const geoH = maxY - minY;
-
-  const padX = viewBox.width * 0.05;
-  const padY = viewBox.height * 0.05;
-  const innerW = viewBox.width - 2 * padX;
-  const innerH = viewBox.height - 2 * padY;
-
-  function project(lon: number, lat: number): [number, number] {
-    const x = geoW === 0
-      ? viewBox.width / 2
-      : padX + ((lon - minX) / geoW) * innerW;
-    // Flip Y: north (higher lat) → smaller SVG y
-    const y = geoH === 0
-      ? viewBox.height / 2
-      : padY + ((maxY - lat) / geoH) * innerH;
-    return [round2(x), round2(y)];
-  }
-
-  return features.map((f) => {
-    const subpaths: string[] = [];
-    for (const ring of f.rings) {
-      if (ring.length === 0) continue;
-      const first = ring[0];
-      if (!first) continue;
-      const [x0, y0] = project(first[0] ?? 0, first[1] ?? 0);
-      let d = `M ${x0} ${y0}`;
-      for (let i = 1; i < ring.length; i++) {
-        const pt = ring[i];
-        if (!pt) continue;
-        const [x, y] = project(pt[0] ?? 0, pt[1] ?? 0);
-        d += ` L ${x} ${y}`;
-      }
-      d += ' Z';
-      subpaths.push(d);
-    }
-    return subpaths.join(' ');
-  });
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-// ---------------------------------------------------------------------------
 // matchRows
 // ---------------------------------------------------------------------------
 
@@ -404,3 +311,43 @@ export function shouldDropTileLayer(failed: number, loaded: number): boolean {
 
 /** Tile errors (with zero successful loads) before the basemap is dropped. */
 export const TILE_FAIL_THRESHOLD = 4;
+
+/**
+ * Result-shape check: is a `run_select` result mappable?
+ *
+ * A result is mappable when it has a key column (`code`, else `barangay`)
+ * and at least one numeric metric column (the key column itself is excluded
+ * — a bare integer `code` is not a metric). Pure; imported by the UI to
+ * decide whether to offer the "Show map" affordance, and kept driver-free
+ * so it can be tested from Node without pulling in the Leaflet chunk.
+ */
+export function isMapApplicable(columns: string[], rows: unknown[][]): boolean {
+  return keyColumn(columns) !== null && numericColumns(columns, rows).length > 0;
+}
+
+/** Prefer the `code` column, else the `barangay` name column. */
+export function keyColumn(columns: string[]): string | null {
+  if (columns.includes('code')) return 'code';
+  if (columns.includes('barangay')) return 'barangay';
+  return null;
+}
+
+function isNumericValue(v: unknown): boolean {
+  if (typeof v === 'number') return Number.isFinite(v);
+  if (typeof v === 'string' && v.trim() !== '') return Number.isFinite(Number(v));
+  return false;
+}
+
+/**
+ * Metric columns: columns with at least one numeric value, excluding the key
+ * column (a bare integer `code` is not a mappable metric).
+ */
+export function numericColumns(columns: string[], rows: unknown[][]): string[] {
+  const key = keyColumn(columns);
+  return columns
+    .filter((c) => c !== key)
+    .filter((c) => {
+      const i = columns.indexOf(c);
+      return rows.some((r) => isNumericValue(r[i]));
+    });
+}

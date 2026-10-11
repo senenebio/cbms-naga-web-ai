@@ -21,7 +21,7 @@ import AnswerMarkdown from './AnswerMarkdown.js';
 import ChartBlock from './ChartBlock.js';
 import ResultTable from './ResultTable.js';
 import MapSection from './MapSection.js';
-import { isMapApplicable } from './BarangayMap.js';
+import { isMapApplicable } from '../../../src/map/geo.js';
 import { DEMO_QUESTIONS } from '../demoQuestions.js';
 
 const SHOW_SQL_KEY = 'cbms-show-sql';
