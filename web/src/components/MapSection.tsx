@@ -1,13 +1,18 @@
 /**
- * Map feature (P3, T3.6) — the "Show map" trigger in the result section.
+ * Map feature — the "Show map" trigger in the result section.
  *
  * A per-result collapsible control: the map is hidden until requested (M2),
  * and state is per-result (each instance owns its open/closed state), not
  * global. Rendered only for applicable results (see `isMapApplicable`).
+ *
+ * The Leaflet map is loaded on demand (`React.lazy` + dynamic `import()`) so
+ * Leaflet (~140 KB) lives in its own chunk and is not part of the main bundle
+ * (same pattern as `ChartBlock`/Recharts).
  */
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import type { Theme } from '../theme.js';
-import BarangayMap from './BarangayMap.js';
+
+const LeafletBarangayMap = lazy(() => import('./LeafletBarangayMap.js'));
 
 interface MapSectionProps {
   columns: string[];
@@ -27,7 +32,11 @@ export default function MapSection({ columns, rows, theme }: MapSectionProps) {
       >
         {open ? 'Hide map' : 'Show map'}
       </button>
-      {open && <BarangayMap columns={columns} rows={rows} theme={theme} />}
+      {open && (
+        <Suspense fallback={<div className="note">Loading map…</div>}>
+          <LeafletBarangayMap columns={columns} rows={rows} theme={theme} />
+        </Suspense>
+      )}
     </div>
   );
 }
