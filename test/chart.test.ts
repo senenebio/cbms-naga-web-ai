@@ -121,6 +121,35 @@ describe('validateChartSpec — xKey / series keys', () => {
   });
 });
 
+describe('validateChartSpec — non-metric series (coordinates/identifiers)', () => {
+  it('rejects lat/lon as series', () => {
+    expect(() =>
+      validateChartSpec({ type: 'bar', series: ['lat', 'lon'], data: [{ name: 'A', lat: 1, lon: 2 }] }),
+    ).toThrow(ChartSpecError);
+  });
+
+  it('rejects aliased coordinate names (case-insensitive)', () => {
+    expect(() =>
+      validateChartSpec({ type: 'bar', series: ['Latitude'], data: [{ name: 'A', Latitude: 1 }] }),
+    ).toThrow(ChartSpecError);
+  });
+
+  it('rejects psgc_code as a series', () => {
+    expect(() =>
+      validateChartSpec({ type: 'bar', series: ['psgc_code'], data: [{ name: 'A', psgc_code: 1 }] }),
+    ).toThrow(ChartSpecError);
+  });
+
+  it('allows a genuine metric alongside coordinate columns', () => {
+    const spec = validateChartSpec({
+      type: 'bar',
+      series: ['hh'],
+      data: [{ name: 'A', hh: 5, lat: 1, lon: 2 }],
+    });
+    expect(spec.series).toEqual(['hh']);
+  });
+});
+
 describe('validateChartSpec — series cardinality per type', () => {
   it('rejects a pie with more than one series', () => {
     expect(() =>

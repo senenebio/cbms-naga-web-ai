@@ -60,9 +60,10 @@ export interface ChartSpec {
 1. `type` ∈ {`bar`, `line`, `area`, `pie`, `scatter`}.
 2. `data` is a non-empty array of objects, length ≤ `MAX_CHART_POINTS` (**50**).
 3. `xKey` and every `series` key present on every row.
-4. `series` values are finite numbers (numeric strings coerced; non-numeric rejected).
-5. bar/line/area → `series` non-empty; pie → `series` length 1; scatter → `series` length ≥ 1.
-6. Defaults (`xKey`, `series`) are filled in so the renderer receives a fully-resolved spec.
+4. `series` must not be coordinate/identifier columns (`lat`/`lon`/`latitude`/`longitude`/`psgc_code`, case-insensitive — the shared `NON_METRIC_COLUMNS` set in `src/data.ts`); they are not plottable metrics.
+5. `series` values are finite numbers (numeric strings coerced; non-numeric rejected).
+6. bar/line/area → `series` non-empty; pie → `series` length 1; scatter → `series` length ≥ 1.
+7. Defaults (`xKey`, `series`) are filled in so the renderer receives a fully-resolved spec.
 
 ### Tool spec (`MAKE_CHART_TOOL_SPEC`)
 

@@ -11,6 +11,8 @@
  * the message back to the LLM so it can retry.
  */
 
+import { isNonMetricColumn } from '../data.js';
+
 export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
 
 export interface ChartSpec {
@@ -135,6 +137,15 @@ export function validateChartSpec(raw: unknown): ChartSpec {
       }
       return s;
     });
+  }
+
+  // 4b. series must not be coordinate/identifier columns — not plottable metrics
+  for (let i = 0; i < series.length; i++) {
+    if (isNonMetricColumn(series[i])) {
+      throw new ChartSpecError(
+        `chart.series[${i}] "${series[i]}" is a coordinate/identifier column, not a plottable metric — use a value column (count, sum, or average)`,
+      );
+    }
   }
 
   // 5. type-specific series cardinality

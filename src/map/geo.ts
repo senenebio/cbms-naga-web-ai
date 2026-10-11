@@ -12,6 +12,8 @@
  * - `isMapApplicable` — result-shape check (key column + numeric metric)
  */
 
+import { isNonMetricColumn } from '../data.js';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -344,27 +346,9 @@ function isNumericValue(v: unknown): boolean {
 }
 
 /**
- * Column names that are not meaningful choropleth metrics — coordinates and
- * identifier codes — excluded from the metric list (case-insensitive). The
- * warehouse `barangay` table exposes `lat`/`lon`; LLM queries may alias them
- * (`AS latitude`). `psgc_code` is an integer identifier, not a value.
- */
-const NON_METRIC_COLUMN_NAMES = new Set([
-  'lat',
-  'lon',
-  'latitude',
-  'longitude',
-  'psgc_code',
-]);
-
-function isNonMetricColumn(name: string): boolean {
-  return NON_METRIC_COLUMN_NAMES.has(name.trim().toLowerCase());
-}
-
-/**
  * Metric columns: columns with at least one numeric value, excluding the key
  * column (a bare integer `code` is not a mappable metric) and non-metric
- * columns (coordinates / identifier codes).
+ * columns (coordinates / identifier codes, see `src/data.ts`).
  */
 export function numericColumns(columns: string[], rows: unknown[][]): string[] {
   const key = keyColumn(columns);

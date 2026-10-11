@@ -78,6 +78,26 @@ export const PII_EXCLUDED_COLUMNS = new Set([
 ]);
 
 /**
+ * Column names that are exposed but not meaningful chart/map metrics —
+ * coordinates and identifier codes — excluded from metric lists
+ * (case-insensitive). Distinct from `PII_EXCLUDED_COLUMNS` (which are never
+ * exposed at all): these columns ARE exposed, just not plottable values.
+ * The warehouse exposes `lat`/`lon` (demo columns); LLM queries may alias
+ * them (`AS latitude`). `psgc_code` is an integer identifier, not a value.
+ */
+export const NON_METRIC_COLUMNS = new Set([
+  'lat',
+  'lon',
+  'latitude',
+  'longitude',
+  'psgc_code',
+]);
+
+export function isNonMetricColumn(name: string): boolean {
+  return NON_METRIC_COLUMNS.has(name.trim().toLowerCase());
+}
+
+/**
  * Columns allowed in a view: dictionary include=true entries that actually
  * exist among the table's columns (dictionary covers household+person
  * sections, so names legitimately repeat), minus the explicit PII
