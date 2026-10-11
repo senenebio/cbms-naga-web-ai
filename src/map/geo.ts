@@ -383,3 +383,24 @@ export function colorScale(values: Array<number | null>): (v: number | null) => 
     );
   };
 }
+
+/**
+ * Basemap tile-failure decision (Leaflet map, P3 — pure, unit-testable).
+ *
+ * The map keeps its OSM basemap while any tile is loading successfully. Once
+ * a batch of tile errors accumulates with zero successful loads (offline /
+ * blocked network), the tile layer is dropped and the map continues as a
+ * polygons-only choropleth. `loaded > 0` is sticky: a single successful tile
+ * means the network path works, so later transient errors are ignored.
+ *
+ * @param failed  number of `tileerror` events seen for the tile layer
+ * @param loaded  number of `tileload` events seen for the tile layer
+ * @returns true when the tile layer should be removed
+ */
+export function shouldDropTileLayer(failed: number, loaded: number): boolean {
+  if (loaded > 0) return false;
+  return failed >= TILE_FAIL_THRESHOLD;
+}
+
+/** Tile errors (with zero successful loads) before the basemap is dropped. */
+export const TILE_FAIL_THRESHOLD = 4;

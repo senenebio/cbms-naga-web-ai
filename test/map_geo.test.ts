@@ -10,6 +10,7 @@ import {
   projectToSvg,
   matchRows,
   colorScale,
+  shouldDropTileLayer,
   MapGeoError,
   type BarangayFeature,
   type ViewBox,
@@ -518,5 +519,26 @@ describe('colorScale', () => {
       const c = scale(v);
       expect(c).toMatch(/^(#[\da-fA-F]{6}|rgb\(\d+, \d+, \d+\))$/);
     }
+  });
+});
+
+describe('shouldDropTileLayer', () => {
+  it('keeps the basemap while no errors have occurred', () => {
+    expect(shouldDropTileLayer(0, 0)).toBe(false);
+  });
+
+  it('keeps the basemap below the failure threshold (zero loads)', () => {
+    expect(shouldDropTileLayer(1, 0)).toBe(false);
+    expect(shouldDropTileLayer(3, 0)).toBe(false);
+  });
+
+  it('drops the basemap at the failure threshold (zero loads)', () => {
+    expect(shouldDropTileLayer(4, 0)).toBe(true);
+    expect(shouldDropTileLayer(99, 0)).toBe(true);
+  });
+
+  it('never drops once a tile has loaded successfully (sticky)', () => {
+    expect(shouldDropTileLayer(4, 1)).toBe(false);
+    expect(shouldDropTileLayer(50, 3)).toBe(false);
   });
 });

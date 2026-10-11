@@ -22,6 +22,7 @@ import {
   colorScale,
   matchRows,
   parseBarangayGeojson,
+  shouldDropTileLayer,
   type BarangayFeature,
 } from '../../../src/map/geo.js';
 import { isRural } from '../../../src/data.js';
@@ -105,8 +106,10 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
   const [loadError, setLoadError] = useState(false);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [valueCol, setValueCol] = useState('');
+  const [tilesOffline, setTilesOffline] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
+  const tileStatsRef = useRef({ failed: 0, loaded: 0 });
 
   const key = keyColumn(columns);
   const numCols = useMemo(() => numericColumns(columns, rows), [columns, rows]);
@@ -170,10 +173,26 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     map.fitBounds(bounds, { padding: [8, 8] });
     map.setMaxBounds(bounds.pad(3));
 
-    L.tileLayer(OSM_TILE_URL, {
+    // OSM basemap with graceful fallback: if a batch of tiles fails with no
+    // successful loads (offline / blocked), drop the layer and continue as a
+    // polygons-only choropleth. Stats are per-mount: re-opening the map
+    // re-attempts tiles from scratch.
+    const stats = tileStatsRef.current;
+    const tile = L.tileLayer(OSM_TILE_URL, {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(map);
+    tile.on('tileload', () => {
+      stats.loaded += 1;
+    });
+    tile.on('tileerror', () => {
+      stats.failed += 1;
+      if (shouldDropTileLayer(stats.failed, stats.loaded)) {
+        tile.off();
+        map.removeLayer(tile);
+        setTilesOffline(true);
+      }
+    });
 
     const styleFor = (feature: GeoJSON.Feature): L.PathOptions => {
       const code = String(feature.properties?.code ?? '');
@@ -211,6 +230,8 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     return () => {
       map.remove();
       geoLayerRef.current = null;
+      tileStatsRef.current = { failed: 0, loaded: 0 };
+      setTilesOffline(false);
     };
   }, [fc, theme]);
 
@@ -270,6 +291,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
         </label>
       )}
       <div className="map-leaflet" ref={containerRef} />
+      {tilesOffline && <div className="map-note">Basemap unavailable — polygons only.</div>}
       {selected && (
         <div className="map-detail">
           <strong>{selected.name}</strong>: {formatValue(selected.value)} {metric} ·{' '}

@@ -553,6 +553,51 @@ body {
   font-size: 10.5px;
   color: var(--muted);
 }
+/* Leaflet map container (Leaflet requires an explicit height). */
+.map-leaflet {
+  height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+/* Basemap-fallback note (tiles unreachable → polygons only). */
+.map-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Leaflet controls (theme-aware) ---- */
+.leaflet-container {
+  font-family: inherit;
+  background: var(--surface);
+}
+.leaflet-control-zoom a {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--border);
+}
+.leaflet-control-zoom a:hover {
+  background: var(--chip);
+  border-color: var(--accent);
+}
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--panel) 85%, transparent);
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.leaflet-control-attribution a {
+  color: var(--accent);
+}
+.leaflet-tooltip {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.leaflet-tooltip:before {
+  border-top-color: var(--border);
+}
 
 /* ---- LLM settings dialog ---- */
 .settings-overlay {
