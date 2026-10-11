@@ -32,6 +32,8 @@ import type { Theme } from '../theme.js';
 
 const GEO_URL = '/data/naga-barangays.geojson';
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+/** Subtle stroke opacity so basemap shows through the borders (fill is adjustable). */
+const STROKE_OPACITY = 0.6;
 
 /** Module cache: fetch the GeoJSON asset once for the lifetime of the page. */
 let geoPromise: Promise<string> | null = null;
@@ -77,6 +79,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [valueCol, setValueCol] = useState('');
   const [tilesOffline, setTilesOffline] = useState(false);
+  const [fillOpacity, setFillOpacity] = useState(0.45);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const tileStatsRef = useRef({ failed: 0, loaded: 0 });
@@ -172,7 +175,8 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
         fillColor: entry?.fill ?? palette.muted,
         color: selected ? palette.ink : palette.border,
         weight: selected ? 2.5 : 1,
-        fillOpacity: 0.85,
+        fillOpacity,
+        opacity: STROKE_OPACITY,
       };
     };
     const tooltipFor = (feature: GeoJSON.Feature): string => {
@@ -218,7 +222,8 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
         fillColor: entry?.fill ?? palette.muted,
         color: selected ? palette.ink : palette.border,
         weight: selected ? 2.5 : 1,
-        fillOpacity: 0.85,
+        fillOpacity,
+        opacity: STROKE_OPACITY,
       };
     });
     layer.eachLayer((l) => {
@@ -227,7 +232,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
       const entry = model.byCode.get(code);
       if (entry) l.setTooltipContent(`${entry.name}: ${formatValue(entry.value)}`);
     });
-  }, [model, selectedCode, palette]);
+  }, [model, selectedCode, palette, fillOpacity]);
 
   if (loadError) {
     return (
@@ -260,6 +265,17 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
           </select>
         </label>
       )}
+      <label className="map-fill-opacity">
+        Fill opacity:
+        <input
+          type="range"
+          min={0.1}
+          max={1}
+          step={0.05}
+          value={fillOpacity}
+          onChange={(e) => setFillOpacity(Number(e.target.value))}
+        />
+      </label>
       <div className="map-leaflet" ref={containerRef} />
       {tilesOffline && <div className="map-note">Basemap unavailable — polygons only.</div>}
       {selected && (

@@ -497,6 +497,17 @@ body {
   color: var(--ink);
   font-size: 12.5px;
 }
+.map-fill-opacity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.map-fill-opacity input[type='range'] {
+  width: 120px;
+  accent-color: var(--accent, #4a90d9);
+}
 .map-wrap {
   position: relative;
   border: 1px solid var(--border);

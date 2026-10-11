@@ -112,7 +112,6 @@ row, legend, metric selector) and theming model.
 ## Open items (deferred)
 
 - **"Show map" placement** — remains open (parent spec); explicitly out of scope for this spec (L7).
-- **Polygon fill too opaque** — DEFERRED, note only. The choropleth fill obscures the basemap's data/labels (streets, POIs, water). Consider lowering the fill opacity (and/or raising the stroke) so the basemap shows through. Revisit later.
 
 ## Resolved
 
@@ -120,3 +119,5 @@ row, legend, metric selector) and theming model.
 - **Bundle size check** — confirmed in P1: lazy chunk 153 KB (44.5 KB gzip), same class as the recharts chunk.
 - **Polygon geometry quality (gaps)** — RESOLVED. The gaps came from the prior source's `t0p005` oversimplification (~5 pts/barangay). Re-converted `data/naga-barangays.geojson` from a finer source — **geoph (OSSPhilippines, MIT)** — at 10–58 pts/barangay (662 pts total; 19 KB). Joined to the warehouse by name (25 exact + 2 accent variants: `Concepcion Pequeo`→`CONCEPCION PEQUEÑA`, `Peafrancia`→`PEÑAFRANCIA`); all 27 `code`→`name` match the warehouse and every centroid is within 2.6 km of its warehouse lat/lon. `metadata.source` records the new provenance. (bettergov #23 was only `t0p005`; OSM has no Naga barangay boundaries — that path was exhausted before this.)
 - **Lat/long columns surface as map metrics** — RESOLVED. `numericColumns` (driver-free core, `src/map/geo.ts`) now excludes non-metric column names — coordinates (`lat`/`lon`/`latitude`/`longitude`) and the `psgc_code` identifier — case-insensitively, before the numeric check. This fixes both the metric `<select>` and the `isMapApplicable` gate at once (a coordinate-only result no longer offers "Show map"). The set lives in `src/data.ts` (`NON_METRIC_COLUMNS` / `isNonMetricColumn`) and is **shared** with the chart guardrail — `validateChartSpec` rejects the same columns as `series` (see `advanced-charts-spec.md` validation rule 4).
+
+- **Polygon fill too opaque** — RESOLVED. Default fill opacity lowered from `0.85` to `0.45`, with a runtime slider (10–100%) so the user can tune how much of the basemap shows through. The stroke (border) uses a subtle fixed `opacity: 0.6` (`STROKE_OPACITY`) so the basemap shows through the borders too. The slider drives `fillOpacity` in the layer style (restyle-in-place; no map recreation).
