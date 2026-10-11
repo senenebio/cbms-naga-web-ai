@@ -344,13 +344,33 @@ function isNumericValue(v: unknown): boolean {
 }
 
 /**
+ * Column names that are not meaningful choropleth metrics — coordinates and
+ * identifier codes — excluded from the metric list (case-insensitive). The
+ * warehouse `barangay` table exposes `lat`/`lon`; LLM queries may alias them
+ * (`AS latitude`). `psgc_code` is an integer identifier, not a value.
+ */
+const NON_METRIC_COLUMN_NAMES = new Set([
+  'lat',
+  'lon',
+  'latitude',
+  'longitude',
+  'psgc_code',
+]);
+
+function isNonMetricColumn(name: string): boolean {
+  return NON_METRIC_COLUMN_NAMES.has(name.trim().toLowerCase());
+}
+
+/**
  * Metric columns: columns with at least one numeric value, excluding the key
- * column (a bare integer `code` is not a mappable metric).
+ * column (a bare integer `code` is not a mappable metric) and non-metric
+ * columns (coordinates / identifier codes).
  */
 export function numericColumns(columns: string[], rows: unknown[][]): string[] {
   const key = keyColumn(columns);
   return columns
     .filter((c) => c !== key)
+    .filter((c) => !isNonMetricColumn(c))
     .filter((c) => {
       const i = columns.indexOf(c);
       return rows.some((r) => isNumericValue(r[i]));

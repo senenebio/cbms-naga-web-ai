@@ -10,6 +10,7 @@ import {
   matchRows,
   colorScale,
   isMapApplicable,
+  numericColumns,
   shouldDropTileLayer,
   MapGeoError,
   type BarangayFeature,
@@ -427,6 +428,24 @@ describe('colorScale', () => {
   });
 });
 
+describe('numericColumns', () => {
+  it('excludes coordinate and psgc_code columns', () => {
+    expect(numericColumns(['code', 'hh', 'lat', 'lon', 'psgc_code'], [[1, 10, 13.6, 123.2, 501724001]])).toEqual(['hh']);
+  });
+
+  it('excludes aliased coordinate names (case-insensitive)', () => {
+    expect(numericColumns(['code', 'Latitude', 'LONGITUDE'], [[1, 13.6, 123.2]])).toEqual([]);
+  });
+
+  it('keeps genuine metrics alongside excluded columns', () => {
+    expect(numericColumns(['code', 'hh', 'lat', 'lon'], [[1, 10, 13.6, 123.2]])).toEqual(['hh']);
+  });
+
+  it('still returns real numeric columns when none are excluded', () => {
+    expect(numericColumns(['code', 'hh', 'pop'], [[1, 10, 20]])).toEqual(['hh', 'pop']);
+  });
+});
+
 describe('isMapApplicable', () => {
   it('is true for a code column + a numeric metric', () => {
     expect(isMapApplicable(['code', 'barangay', 'hh'], [[1, 'A', 10]])).toBe(true);
@@ -446,6 +465,10 @@ describe('isMapApplicable', () => {
 
   it('accepts numeric strings as metric values', () => {
     expect(isMapApplicable(['code', 'hh'], [[1, '10']])).toBe(true);
+  });
+
+  it('is false when the only numeric columns are coordinates', () => {
+    expect(isMapApplicable(['code', 'barangay', 'lat', 'lon'], [[1, 'A', 13.6, 123.2]])).toBe(false);
   });
 });
 
