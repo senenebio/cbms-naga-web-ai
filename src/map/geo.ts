@@ -180,15 +180,18 @@ function validateRings(raw: unknown, featIdx: number): number[][][] {
 // ---------------------------------------------------------------------------
 
 /**
- * Match warehouse result rows to features by code.
+ * Match warehouse result rows to features by code, falling back to name.
  *
- * Code normalization: `String(value).trim()` on both sides. No numeric
+ * A feature is matched when the row's key value equals the feature's `code`
+ * OR its `barangay` name. Queries may group by `code` (the warehouse key) or
+ * by `barangay` (the name); either way the row's key column holds the value
+ * to match. Normalization: `String(value).trim()` on both sides. No numeric
  * normalization — `'01'` does NOT match `'1'`. This is deliberate: the
- * warehouse `barangay.code` is a string column, and the GeoJSON asset
- * must use the same format.
+ * warehouse `barangay.code` and the GeoJSON `code` asset must use the same
+ * format, and the names are consistently cased (uppercase) in both sources.
  *
  * @returns Array (same length as `features`) of numeric values;
- *          `null` for unmatched codes or non-numeric values.
+ *          `null` for unmatched features or non-numeric values.
  */
 export function matchRows(
   features: BarangayFeature[],
@@ -206,10 +209,12 @@ export function matchRows(
   }
 
   return features.map((f) => {
-    const key = f.code.trim();
-    if (!lookup.has(key)) return null;
-    const raw = lookup.get(key);
-    return coerceFinite(raw);
+    // Match by code first, then by name (a query may group by either).
+    const byCode = lookup.get(f.code.trim());
+    if (byCode !== undefined) return coerceFinite(byCode);
+    const byName = lookup.get(f.name.trim());
+    if (byName !== undefined) return coerceFinite(byName);
+    return null;
   });
 }
 

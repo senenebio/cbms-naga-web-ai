@@ -305,6 +305,30 @@ describe('matchRows', () => {
     const result = matchRows(features, rows, 'code', 'value');
     expect(result[0]).toBeNull();
   });
+
+  it('matches rows keyed by name when there is no code column', () => {
+    const rows = [
+      { barangay: 'Poblacion', value: 100 },
+      { barangay: 'San Pedro', value: 200 },
+    ];
+    const result = matchRows(features, rows, 'barangay', 'value');
+    expect(result).toEqual([100, 200, null]);
+  });
+
+  it('returns null for names that match no feature', () => {
+    const rows = [{ barangay: 'Nowhere', value: 42 }];
+    const result = matchRows(features, rows, 'barangay', 'value');
+    expect(result).toEqual([null, null, null]);
+  });
+
+  it('matches a code (JS number, int32) to a zero-padded feature code', () => {
+    // Real warehouse: code is int32 → JS number; feature code '01' must match 1
+    // only when the asset uses the same format. Here the asset is '01', so a
+    // bare 1 does NOT match (no numeric normalization). Regression guard.
+    const rows = [{ code: 1, value: 10 }];
+    const result = matchRows(features, rows, 'code', 'value');
+    expect(result).toEqual([null, null, null]);
+  });
 });
 
 // ---------------------------------------------------------------------------
