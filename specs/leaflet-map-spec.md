@@ -114,6 +114,7 @@ row, legend, metric selector) and theming model.
 - **"Show map" placement** — remains open (parent spec); explicitly out of scope for this spec (L7).
 - **Polygon geometry quality (gaps)** — DEFERRED, note only. Adjacent barangay polygons show visible gaps; the bundled `data/naga-barangays.geojson` is a simplified conversion (bettergov.ph dataset 23, `simplification: t0p005`) and the conversion may have dropped or shifted boundary points. May require re-conversion from the source (bettergov.ph / NAMRIA boundaries). Revisit later.
 - **Lat/long columns surface as map metrics** — DEFERRED, note only. The metric `<select>` lists longitude/latitude (coordinate) columns as selectable choropleth metrics, which are not meaningful map values. They should be excluded from `numericColumns` (e.g. by column name). Revisit later.
+- **Polygon fill too opaque** — DEFERRED, note only. The choropleth fill obscures the basemap's data/labels (streets, POIs, water). Consider lowering the fill opacity (and/or raising the stroke) so the basemap shows through. Revisit later.
 
 ## Resolved
 
