@@ -112,7 +112,11 @@ row, legend, metric selector) and theming model.
 ## Open items (deferred)
 
 - **"Show map" placement** — remains open (parent spec); explicitly out of scope for this spec (L7).
-- **Polygon geometry quality (gaps)** — DEFERRED, note only. Adjacent barangay polygons show visible gaps; the bundled `data/naga-barangays.geojson` is a simplified conversion (bettergov.ph dataset 23, `simplification: t0p005`) and the conversion may have dropped or shifted boundary points. May require re-conversion from the source (bettergov.ph / NAMRIA boundaries). Revisit later.
+- **Polygon geometry quality (gaps)** — DEFERRED, note only. Adjacent barangay polygons show visible gaps.
+  - **Provenance (investigated 2026-10-11):** the gaps come from the source's own simplification, not a conversion bug. The documented source — bettergov.ph dataset 23 (derived from PSA PSGC + NAMRIA) — is published **only** at tolerance `t0p005`, and that file is **byte-identical** to the bundled asset (27/27 geometries match; ~5 pts per barangay). So re-converting from the source changes nothing.
+  - **Finer-source options checked:** bettergov has only that one `t0p005` release; **OpenStreetMap has 0** `admin_level=8` (barangay) boundaries for Naga City; NAMRIA raw boundaries are authoritative full-resolution but require a formal data request (no direct download).
+  - **Attempted fix:** a one-time `mapshaper -clean` (topology fix / sliver removal) was applied to the asset (134 → 229 pts; metadata `post_processing` records it). This does not snap the shared boundaries that cause the gaps — visual verification is pending.
+  - **Real fix (later):** obtain a finer-tolerance source (finer NAMRIA/bettergov release) and re-convert. Revisit later.
 - **Lat/long columns surface as map metrics** — DEFERRED, note only. The metric `<select>` lists longitude/latitude (coordinate) columns as selectable choropleth metrics, which are not meaningful map values. They should be excluded from `numericColumns` (e.g. by column name). Revisit later.
 - **Polygon fill too opaque** — DEFERRED, note only. The choropleth fill obscures the basemap's data/labels (streets, POIs, water). Consider lowering the fill opacity (and/or raising the stroke) so the basemap shows through. Revisit later.
 
