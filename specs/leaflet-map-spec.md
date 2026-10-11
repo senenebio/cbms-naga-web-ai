@@ -109,8 +109,13 @@ row, legend, metric selector) and theming model.
 - [x] **T4.2 Docs** — README map section updated; `map-feature-spec.md` "Map display rework" → resolved (point to this spec); "Show map" placement stays OPEN.
 - [x] **T4.3 Final gate** — `npm test` + `npm run lint` + `npm run build:web` green; manual: online + offline, both themes, per-barangay chat question → "Show map".
 
-## Open items
+## Open items (deferred)
 
 - **"Show map" placement** — remains open (parent spec); explicitly out of scope for this spec (L7).
-- **Tile retry policy** — spec proposes "drop on first failed zoom level, fresh retry per mount"; exact threshold (all vs ≥50 %) to be finalized in P3.
-- **Bundle size check** — confirm the lazy chunk stays in the same class as the recharts chunk (~140 KB Leaflet expected) in P1.
+- **Polygon geometry quality (gaps)** — DEFERRED, note only. Adjacent barangay polygons show visible gaps; the bundled `data/naga-barangays.geojson` is a simplified conversion (bettergov.ph dataset 23, `simplification: t0p005`) and the conversion may have dropped or shifted boundary points. May require re-conversion from the source (bettergov.ph / NAMRIA boundaries). Revisit later.
+- **Lat/long columns surface as map metrics** — DEFERRED, note only. The metric `<select>` lists longitude/latitude (coordinate) columns as selectable choropleth metrics, which are not meaningful map values. They should be excluded from `numericColumns` (e.g. by column name). Revisit later.
+
+## Resolved
+
+- **Tile retry policy** — finalized in P3: threshold 4 (drop the tile layer after 4 failures at one zoom level; sticky; fresh retry per mount).
+- **Bundle size check** — confirmed in P1: lazy chunk 153 KB (44.5 KB gzip), same class as the recharts chunk.
