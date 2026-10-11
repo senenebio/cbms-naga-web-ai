@@ -290,8 +290,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
         <span>{formatValue(model.max)}</span>
       </div>
       <div className="map-attr">
-        © OpenStreetMap contributors · PSGC © PSA · Boundaries © NAMRIA · Data: Manuel Balmeo / bettergov.ph
-        (MIT)
+        © OpenStreetMap contributors · PSGC © PSA · Boundaries © Christian Blanquera / OSSPhilippines (MIT)
       </div>
     </div>
   );

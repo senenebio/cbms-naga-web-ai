@@ -97,13 +97,13 @@ describe('<LeafletBarangayMap />', () => {
     expect(text).toContain('900');
   });
 
-  it('shows the OSM + PSA/NAMRIA attribution footer', async () => {
+  it('shows the OSM + PSA + boundary-source attribution footer', async () => {
     const columns = ['code', 'barangay', 'hh'];
     const rows: unknown[][] = [[1, 'BQ 1', 100]];
     const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('OpenStreetMap contributors');
-    expect(text).toContain('NAMRIA');
+    expect(text).toContain('OSSPhilippines');
   });
 
   it('renders "Map unavailable." for malformed GeoJSON', async () => {
