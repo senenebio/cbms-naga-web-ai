@@ -150,6 +150,13 @@ export function validateChartSpec(raw: unknown): ChartSpec {
     }
   }
 
+  // 4c. xKey must not be a coordinate/identifier column
+  if (isNonMetricColumn(xKey)) {
+    throw new ChartSpecError(
+      `chart.xKey "${xKey}" is a coordinate/identifier column, not a plottable category — use a name, label, or aggregated value column`,
+    );
+  }
+
   // 5. type-specific series cardinality
   if (type === 'pie' && series.length !== 1) {
     throw new ChartSpecError('chart.type "pie" requires exactly one series column');
