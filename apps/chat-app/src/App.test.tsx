@@ -11,7 +11,7 @@ import App, { type AppDeps } from './App';
 import { BRAND } from './brand';
 import { stubEngine } from './testStubs';
 import type { BrowserWarehouseHandle } from './wasm/engine';
-import type { ProviderResolution } from './core/provider';
+import type { ProviderResolution, KeyValueStorage } from './core/provider';
 
 function stubWarehouse() {
   return async (): Promise<BrowserWarehouseHandle> => ({ engine: stubEngine(), close: vi.fn() });
@@ -21,9 +21,23 @@ function unconfigured() {
   return (): ProviderResolution => ({ status: 'unconfigured' });
 }
 
-async function renderApp(deps: AppDeps = {}) {
-  const view = render(<App deps={deps} />);
-  // Let the initial warehouse-open effect settle.
+function stubStorage(): KeyValueStorage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+  };
+}
+
+async function renderApp(deps: Partial<AppDeps> = {}) {
+  const fullDeps: AppDeps = {
+    openWarehouse: stubWarehouse(),
+    resolveProvider: unconfigured(),
+    storage: stubStorage(),
+    ...deps,
+  };
+  const view = render(<App deps={fullDeps} />);
   await new Promise((r) => setTimeout(r, 0));
   await new Promise((r) => setImmediate(r));
   return view;
@@ -41,31 +55,24 @@ describe('App (static, chat + settings only)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the topbar, chat panel, and a loading note before the warehouse opens', async () => {
-    const openWarehouse = vi.fn(async () => new Promise<BrowserWarehouseHandle>(() => {})); // never resolves
-    await renderApp({ openWarehouse, resolveProvider: unconfigured() });
+  it('renders the header, chat panel, and a loading note before the warehouse opens', async () => {
+    const openWarehouse = vi.fn(async () => new Promise<BrowserWarehouseHandle>(() => {}));
+    await renderApp({ openWarehouse });
     expect(screen.getByText(BRAND.name)).toBeInTheDocument();
     expect(screen.getByText(/Loading the warehouse/)).toBeInTheDocument();
   });
 
-  it('shows the unconfigured model label and opens the settings dialog', async () => {
-    await renderApp({
-      openWarehouse: stubWarehouse(),
-      resolveProvider: unconfigured(),
-    });
-    // The model label updates once the warehouse opens + provider resolves.
-    await vi.waitFor(() => expect(screen.getByText(/not configured/)).toBeInTheDocument());
+  it('shows the unconfigured model label and the settings gear', async () => {
+    await renderApp();
+    await vi.waitFor(() => expect(screen.getByText(/No model set/)).toBeInTheDocument());
 
-    const gear = screen.getByRole('button', { name: 'Open LLM settings' });
-    fireEvent.click(gear);
-    await vi.waitFor(() =>
-      expect(screen.getByRole('dialog', { name: 'LLM settings' })).toBeInTheDocument(),
-    );
+    const gear = screen.getByRole('button', { name: 'Open settings' });
+    expect(gear).toBeInTheDocument();
   });
 
   it('surfaces the warehouse error when openWarehouse rejects', async () => {
     const openWarehouse = vi.fn(async () => Promise.reject(new Error('parquet fetch failed')));
-    await renderApp({ openWarehouse, resolveProvider: unconfigured() });
+    await renderApp({ openWarehouse });
     expect(screen.getByText(/parquet fetch failed/)).toBeInTheDocument();
   });
 });

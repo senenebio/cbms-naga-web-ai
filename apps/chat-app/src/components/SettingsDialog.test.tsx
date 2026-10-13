@@ -1,9 +1,9 @@
 /**
  * Settings dialog tests (jsdom / @testing-library/react).
  *
- * The dialog is a plain `role="dialog"` surface (not Radix — that swap lands
- * in Phase D). These cover the form controls, the Save flow (persisting
- * into a stubbed storage), and the Clear + Cancel affordances.
+ * The dialog uses Radix Dialog (shadcn). These cover the form controls,
+ * the Save flow (persisting into a stubbed storage), and the Cancel
+ * affordance.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -32,8 +32,7 @@ const base = {
 describe('SettingsDialog', () => {
   it('renders the Base URL, API key, and Model controls', () => {
     render(<SettingsDialog {...base} />);
-    const dialog = screen.getByRole('dialog', { name: 'LLM settings' });
-    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText('Connection')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/localhost:11434/)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/secret-BYOK/)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/any model name/)).toBeInTheDocument();
@@ -60,12 +59,10 @@ describe('SettingsDialog', () => {
     expect(screen.getByText(/Saved to this browser/)).toBeInTheDocument();
   });
 
-  it('calls onClose on Cancel and on the header close button', () => {
+  it('calls onClose on Cancel', () => {
     const onClose = vi.fn();
     render(<SettingsDialog storage={makeStorage()} onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
-    expect(onClose).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,12 +1,20 @@
 /**
- * BYOK LLM settings dialog.
+ * BYOK LLM settings dialog — Radix Dialog (shadcn).
  *
- * A single OpenAI-compatible endpoint: Base URL + API key + Model. Save
- * persists into `localStorage` (via `core/provider.ts`). Keys are never
- * shown unmasked (the stored config is displayed through `maskKey`).
- * Saving with a blank API-key field keeps the previously stored key.
+ * A single OpenAI-compatible endpoint: Base URL + API key + Model.
+ * Save persists into `localStorage` (via `core/provider.ts`).
+ * Keys are never shown unmasked (the stored config is displayed
+ * through `maskKey`). Saving with a blank API-key field keeps the
+ * previously stored key.
  */
 import { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@workspace/ui/components/dialog.js';
+import { Button } from '@workspace/ui/components/button.js';
 import {
   maskKey,
   normalizeProviderConfig,
@@ -31,7 +39,6 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
   const [baseUrl, setBaseUrl] = useState('');
   const [model, setModel] = useState('');
   const [apiKey, setApiKey] = useState('');
-  /** The previously stored key (kept out of the input so a blank field preserves it). */
   const [storedKey, setStoredKey] = useState<string | undefined>(undefined);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
@@ -44,12 +51,11 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
       const cfg = normalizeProviderConfig(stored);
       setBaseUrl(cfg.baseUrl);
       setModel(cfg.model);
-      // `'noop'` is the normalization default, never a real stored key.
       if (cfg.apiKey !== 'noop') setStoredKey(cfg.apiKey);
     } catch {
       /* invalid stored config: keep the defaults */
     }
-  }, []);
+  }, [storage]);
 
   function buildPayload(): Record<string, string> {
     const payload: Record<string, string> = {
@@ -66,8 +72,6 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
     setNotice(null);
     try {
       const payload = buildPayload();
-      // Validate before persisting; throws `ProviderConfigError` with an
-      // actionable message on invalid input.
       const resolved = normalizeProviderConfig(payload);
       saveStoredConfig(payload, storage);
       setStoredKey(resolved.apiKey === 'noop' ? undefined : resolved.apiKey);
@@ -79,7 +83,6 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
     }
   }
 
-  /** Probe the endpoint with the current field values (no persistence). */
   async function handleTest() {
     setNotice(null);
     try {
@@ -105,24 +108,11 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="LLM settings"
-    >
-      <div className="flex max-h-[85vh] w-full max-w-110 flex-col gap-3 overflow-y-auto rounded-lg border bg-background p-4 shadow-2xl">
-        <header className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold">LLM settings</h2>
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={onClose}
-            aria-label="Close settings"
-          >
-            ✕
-          </button>
-        </header>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Connection</DialogTitle>
+        </DialogHeader>
 
         <div className="flex flex-col gap-3.5">
           <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
@@ -171,35 +161,18 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-55"
-            onClick={handleSave}
-          >
+          <Button type="button" onClick={handleSave}>
             Save
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground disabled:opacity-55"
-            onClick={handleTest}
-            disabled={testing}
-          >
+          </Button>
+          <Button type="button" variant="outline" onClick={handleTest} disabled={testing}>
             {testing ? 'Testing…' : 'Test'}
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground"
-            onClick={handleClear}
-          >
+          </Button>
+          <Button type="button" variant="outline" onClick={handleClear}>
             Clear
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground"
-            onClick={onClose}
-          >
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </div>
 
         {notice ? (
@@ -211,7 +184,7 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
           Settings and the API key are stored in this browser only (localStorage) — never sent to
           any server.
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

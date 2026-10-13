@@ -1,138 +1,198 @@
 /**
- * Phase F — App shell: chat + settings only (no workspace pane).
+ * Phase F app shell: boots the DuckDB-in-browser warehouse, then renders
+ * ChatLayout with the chat feed + composer.
  *
- * Wires the Phase E browser core:
- *  - On mount, opens the DuckDB warehouse via `openWarehouseBrowser()`
- *    (fetches the 3 parquets, boots the worker) and hands its `SqlEngine`
- *    to the single `ChatPanel`.
- *  - Resolves the BYOK `LLMClient` from `localStorage` via `resolveProvider()`
- *    (re-resolved after a Settings save/clear).
+ * - `openWarehouse()` (Web Worker, duckdb-wasm) loads the 3 parquet
+ *   fixtures and exposes the read-only views as `SqlEngine`.
+ * - BYOK provider resolution (localStorage) builds the `fetch` LLM client.
+ * - Theme toggle (light/dark) on `<html>`.
+ * - SettingsMenu (gear) for model/temperature + "Connection…" → BYOK dialog.
+ * - Composer (auto-growing textarea) pinned to the bottom of the layout.
  *
- * `deps` is injectable so React component tests run with stubs — no network,
- * no duckdb-wasm, no real localStorage.
+ * `deps` are injectable so the boot sequence can be tested in Node.
  */
 import { useEffect, useRef, useState } from 'react';
-import { MoonIcon, SettingsIcon, SunIcon } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
-import { Button } from '@workspace/ui/components/button';
-import type { BrowserWarehouseHandle } from './wasm/engine.js';
-import { openWarehouseBrowser } from './wasm/engine.js';
-import { BRAND } from './brand.js';
-import { resolveProvider, type KeyValueStorage, type ProviderResolution } from './core/provider.js';
-import ChatPanel from './components/ChatPanel.js';
+import { ChatLayout } from '@workspace/ui/components/chat-layout.js';
+import { Composer } from '@workspace/ui/components/composer.js';
+import { SettingsMenu } from '@workspace/ui/components/settings-menu.js';
+import { openWarehouseBrowser, type BrowserWarehouseHandle } from './wasm/engine.js';
+import {
+  readTemperature as readTempFromStorage,
+  resolveProvider,
+  type KeyValueStorage,
+  type ProviderResolution,
+} from './core/provider.js';
 import SettingsDialog from './components/SettingsDialog.js';
+import ChatPanel from './components/ChatPanel.js';
+import { useChat } from './hooks/use-chat.js';
 import { applyTheme, getInitialTheme, saveTheme, type Theme } from './theme.js';
+import { BRAND } from './brand.js';
 
 export interface AppDeps {
-  /** Open the warehouse (stubbed in tests to avoid duckdb-wasm/network). */
-  openWarehouse?: () => Promise<BrowserWarehouseHandle>;
-  /** Resolve the BYOK client from storage (stubbed in tests). */
-  resolveProvider?: (storage?: KeyValueStorage) => ProviderResolution;
+  openWarehouse: () => Promise<BrowserWarehouseHandle>;
+  resolveProvider: () => ProviderResolution;
+  /** Storage for the Settings dialog. */
+  storage: KeyValueStorage;
 }
 
-export default function App({ deps = {} }: { deps?: AppDeps }) {
-  const openWarehouse = deps.openWarehouse ?? openWarehouseBrowser;
-  const resolve = deps.resolveProvider ?? resolveProvider;
+const defaultDeps: AppDeps = {
+  openWarehouse: () => openWarehouseBrowser(),
+  resolveProvider: () => resolveProvider(),
+  storage: localStorage,
+};
 
+export interface AppProps {
+  deps?: AppDeps;
+}
+
+export default function App({ deps = defaultDeps }: AppProps) {
   const [engine, setEngine] = useState<SqlEngine | null>(null);
-  const [warehouseError, setWarehouseError] = useState<string | null>(null);
-  const [resolution, setResolution] = useState<ProviderResolution | null>(null);
+  const [engineError, setEngineError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<ProviderResolution | 'init'>('init');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const [reload, setReload] = useState(0);
-  const closeRef = useRef<(() => Promise<void>) | null>(null);
+  const [model, setModel] = useState<string>('');
+  const [temperature, setTemperature] = useState<number>(0.7);
+  const warehouseRef = useRef<BrowserWarehouseHandle | null>(null);
+  const [theme, setThemeState] = useState<Theme>(() => getInitialTheme());
 
-  // Open the warehouse once on mount.
+  // Boot the warehouse once (injected so tests can substitute a fake).
   useEffect(() => {
+    let handle: BrowserWarehouseHandle | null = null;
     let cancelled = false;
-    setWarehouseError(null);
-    openWarehouse()
-      .then((handle) => {
+    deps
+      .openWarehouse()
+      .then((h: BrowserWarehouseHandle) => {
         if (cancelled) {
-          void handle.close();
+          h.close();
           return;
         }
-        closeRef.current = handle.close;
-        setEngine(handle.engine);
+        handle = h;
+        warehouseRef.current = h;
+        setEngine(h.engine);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setWarehouseError(e instanceof Error ? e.message : String(e));
+        if (cancelled) return;
+        setEngineError(e instanceof Error ? e.message : String(e));
       });
     return () => {
       cancelled = true;
+      handle?.close();
+      warehouseRef.current = null;
     };
-  }, [openWarehouse]);
+  }, [deps]);
 
-  // Resolve the BYOK client (re-run after a Settings save/clear via `reload`).
+  // Resolve the BYOK provider once (and after Settings saves).
   useEffect(() => {
-    setResolution(resolve());
-  }, [resolve, reload]);
+    setProvider(deps.resolveProvider());
+  }, [deps]);
 
-  // Apply + persist the theme.
+  // Initialize model and temperature from localStorage.
+  useEffect(() => {
+    const storedModel = deps.storage.getItem('chat-model');
+    if (storedModel) setModel(storedModel);
+    setTemperature(readTempFromStorage(deps.storage));
+  }, [deps]);
+
+  // Theme: apply the .dark class on <html> + persist.
   useEffect(() => {
     applyTheme(theme);
     saveTheme(theme);
   }, [theme]);
 
+  const toggleTheme = () => {
+    setThemeState((t) => {
+      const next: Theme = t === 'dark' ? 'light' : 'dark';
+      saveTheme(next);
+      return next;
+    });
+  };
+
   const client: LLMClient | null =
-    resolution && resolution.status === 'configured' ? resolution.client : null;
+    provider === 'init' || provider.status === 'unconfigured' ? null : provider.client;
 
-  const modelLabel = warehouseError
-    ? 'Warehouse: failed to load'
-    : engine === null
-      ? 'Warehouse: loading…'
-      : resolution === null
-        ? 'Model: …'
-        : resolution.status === 'unconfigured'
-          ? 'Model: not configured — open Settings'
-          : `Model: ${resolution.config.model}`;
+  // Chat logic via hook.
+  const { messages, busy, draft, setDraft, ask, newChat } = useChat({
+    engine,
+    client,
+    engineError,
+  });
 
-  const themeTitle = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  const modelLabel =
+    provider !== 'init' && provider.status === 'configured'
+      ? provider.masked.model ?? provider.config.model
+      : 'No model set';
+
+  const handleModelChange = (m: string) => {
+    setModel(m);
+    deps.storage.setItem('chat-model', m);
+  };
+
+  const handleTemperatureChange = (v: number) => {
+    setTemperature(v);
+    deps.storage.setItem('chat-temperature', String(v));
+  };
 
   return (
-    <div className="flex h-dvh flex-col">
-      <header className="flex items-center gap-2 border-b px-4 py-3">
-        <span className="text-base font-bold">{BRAND.name}</span>
-        <span className="ml-auto text-xs text-muted-foreground">{modelLabel}</span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={themeTitle}
-          title={themeTitle}
-          onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-        >
-          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Open LLM settings"
-          title="LLM settings"
-          onClick={() => setSettingsOpen(true)}
-        >
-          <SettingsIcon />
-        </Button>
-      </header>
+    <ChatLayout
+      title={BRAND.name}
+      status={modelLabel}
+      headerRight={
+        <>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="inline-flex h-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <SettingsMenu
+            models={['gpt-4o', 'gpt-4o-mini', 'llama3.1:8b', 'qwen3:8b']}
+            model={model}
+            onModelChange={handleModelChange}
+            temperature={temperature}
+            onTemperatureChange={handleTemperatureChange}
+            brandName={BRAND.name}
+            brandVersion={BRAND.version}
+            brandLicense={BRAND.license}
+            onConnection={() => setSettingsOpen(true)}
+          />
+        </>
+      }
+      composer={
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSubmit={() => ask(draft)}
+          disabled={busy || !engine || client === null}
+          placeholder={
+            client === null ? 'Configure a model first (gear icon)…' : 'Ask a question…'
+          }
+        />
+      }
+    >
+      <ChatPanel
+        messages={messages}
+        busy={busy}
+        engine={engine}
+        engineError={engineError}
+        client={client}
+        onOpenSettings={() => setSettingsOpen(true)}
+        theme={theme}
+        onNewChat={newChat}
+      />
 
       {settingsOpen && (
         <SettingsDialog
-          storage={localStorage}
+          storage={deps.storage}
           onClose={() => setSettingsOpen(false)}
-          onSaved={() => setReload((n) => n + 1)}
+          onSaved={() => {
+            setProvider(deps.resolveProvider());
+          }}
         />
       )}
-
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-4">
-        <ChatPanel
-          engine={engine}
-          client={client}
-          engineError={warehouseError}
-          onOpenSettings={() => setSettingsOpen(true)}
-          theme={theme}
-        />
-      </main>
-    </div>
+    </ChatLayout>
   );
 }

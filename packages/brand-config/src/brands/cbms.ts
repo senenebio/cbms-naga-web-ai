@@ -7,9 +7,9 @@ export const CBMS: Brand = {
   id: 'cbms',
   name: 'CBMS Naga 2024',
   welcomeText:
-    'Ask about the 2024 Naga City CBMS — households, persons, and barangays.',
-  version: 'v1.0',
-  license: 'CC BY-NC 4.0',
+    "Explore Naga City's 2024 community data in plain language. I'll run the queries and visualize the answers.",
+  version: '1.0.0',
+  license: 'MIT',
   colors: {
     primary: '#2563eb',
     primaryForeground: '#ffffff',

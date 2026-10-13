@@ -65,6 +65,16 @@ export function clearStoredConfig(storage: KeyValueStorage = defaultStorage()!):
   storage.removeItem(PROVIDER_STORAGE_KEY);
 }
 
+/** Read the persisted temperature (default 0.7). */
+export function readTemperature(storage: KeyValueStorage = defaultStorage()!): number {
+  try {
+    const v = storage.getItem('chat-temperature');
+    return v !== null ? Number(v) : 0.7;
+  } catch {
+    return 0.7;
+  }
+}
+
 /**
  * Resolve the effective LLM client from stored BYOK settings.
  * Missing, malformed, or invalid payloads resolve to `unconfigured`
@@ -80,10 +90,12 @@ export function resolveProvider(storage: KeyValueStorage = defaultStorage()!): P
     if (e instanceof Error) console.warn('ignoring invalid stored LLM config:', e.message);
     return { status: 'unconfigured' };
   }
+  const temperature = readTemperature(storage);
   const client = new FetchLlmClient({
     model: config.model,
     baseUrl: config.baseUrl ?? '',
     apiKey: config.apiKey,
+    temperature,
   });
   const masked: MaskedProviderConfig = maskedView(config);
   return { status: 'configured', client, config, masked };

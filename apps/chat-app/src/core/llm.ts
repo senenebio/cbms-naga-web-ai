@@ -21,6 +21,8 @@ export interface FetchLlmOptions {
   /** OpenAI-compatible base URL, e.g. `https://api.openai.com/v1`. */
   baseUrl: string;
   apiKey?: string;
+  /** Sampling temperature (0–2). Default 0.7. */
+  temperature?: number;
 }
 
 /** OpenAI chat-completions wire types (the subset we consume). */
@@ -78,11 +80,13 @@ export class FetchLlmClient implements LLMClient {
   private readonly model: string;
   private readonly baseUrl: string;
   private readonly apiKey?: string;
+  private readonly temperature: number;
 
   constructor(opts: FetchLlmOptions) {
     this.model = opts.model;
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
     this.apiKey = opts.apiKey;
+    this.temperature = opts.temperature ?? 0.7;
   }
 
   async chat(messages: Message[], tools: ToolSpec[]): Promise<AssistantMessage> {
@@ -98,6 +102,7 @@ export class FetchLlmClient implements LLMClient {
           model: this.model,
           messages: toApiMessages(messages),
           tools,
+          temperature: this.temperature,
         }),
       });
     } catch (e) {

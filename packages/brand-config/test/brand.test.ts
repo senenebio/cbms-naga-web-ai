@@ -47,8 +47,8 @@ describe('BRANDS', () => {
     expect(BRANDS.cbms).toBe(CBMS);
     expect(CBMS.id).toBe('cbms');
     expect(CBMS.name).toBe('CBMS Naga 2024');
-    expect(CBMS.version).toBe('v1.0');
-    expect(CBMS.license).toBe('CC BY-NC 4.0');
+    expect(CBMS.version).toBe('1.0.0');
+    expect(CBMS.license).toBe('MIT');
     expect(CBMS.welcomeText).toBeTruthy();
     expect(CBMS.colors.primary).toBe('#2563eb');
     expect(CBMS.colors.primaryForeground).toBe('#ffffff');
