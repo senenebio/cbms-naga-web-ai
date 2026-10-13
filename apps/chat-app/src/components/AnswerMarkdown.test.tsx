@@ -3,8 +3,7 @@
  * reference UI).
  */
 import { describe, it, expect } from 'vitest';
-import React from 'react';
-import ReactTestRenderer from 'react-test-renderer';
+import { render, screen } from '@testing-library/react';
 import AnswerMarkdown, { sanitizeAnswer, extractCallout, MAX_TABLE_ROWS_SHOWN } from './AnswerMarkdown';
 
 describe('sanitizeAnswer', () => {
@@ -49,12 +48,10 @@ describe('extractCallout', () => {
 
 describe('<AnswerMarkdown />', () => {
   it('renders a callout for a headline number', () => {
-    const tree = ReactTestRenderer.create(
-      React.createElement(AnswerMarkdown, { text: '**1,200** households were surveyed.' }),
-    );
-    const json = tree.toJSON()!;
-    expect(JSON.stringify(json)).toContain('1,200');
-    expect(JSON.stringify(json)).toContain('border-brand-primary');
+    render(<AnswerMarkdown text="**1,200** households were surveyed." />);
+    const callout = screen.getByText('1,200');
+    expect(callout).toBeInTheDocument();
+    expect(callout.closest('div')).toHaveClass('border-brand-primary');
   });
 
   it('renders comparison bars for a 2-column numeric table', () => {
@@ -66,33 +63,29 @@ describe('<AnswerMarkdown />', () => {
       '| A | 31.0% |',
       '| B | 22.5% |',
     ].join('\n');
-    const tree = ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md }));
-    const json = tree.toJSON()!;
-    expect(JSON.stringify(json)).toContain('grid-cols-[minmax(120px,160px)_1fr_80px]');
-    expect(JSON.stringify(json)).toContain('A');
+    const { container } = render(<AnswerMarkdown text={md} />);
+    expect(container.querySelector('[class*="grid-cols-[minmax(120px,160px)_1fr_80px]"]')).toBeInTheDocument();
+    expect(screen.getByText('A')).toBeInTheDocument();
   });
 
   it('caps plain tables at MAX_TABLE_ROWS_SHOWN with an overflow note', () => {
     const rows = Array.from({ length: 27 }, (_, i) => `| B${i} | ${i} | x${i} | y${i} |`);
     const md = ['| Barangay | HH | Persons | Rate |', '| --- | --- | --- | --- |', ...rows].join('\n');
-    const tree = ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md }));
-    const json = JSON.stringify(tree.toJSON());
+    const { container } = render(<AnswerMarkdown text={md} />);
     // Not a bar table (4 columns) → plain capped table.
-    expect(json).toContain('max-h-80');
-    expect(json).toContain('B0');
+    expect(container.querySelector('.max-h-80')).toBeInTheDocument();
+    expect(screen.getByText('B0')).toBeInTheDocument();
     // 27 data rows: rows 0..14 shown, row 15 (B15) is the first hidden one.
-    expect(json).toContain(`B${MAX_TABLE_ROWS_SHOWN - 1}`);
+    expect(screen.getByText(`B${MAX_TABLE_ROWS_SHOWN - 1}`)).toBeInTheDocument();
     // B15 is the first hidden row (B150+ do not exist, so this is unambiguous).
-    expect(json).not.toContain(`B${MAX_TABLE_ROWS_SHOWN}`);
-    // The note is a template literal, so the renderer splits it into children.
-    expect(json).toContain('border-t');
-    expect(json).toContain('"27"');
+    expect(screen.queryByText(`B${MAX_TABLE_ROWS_SHOWN}`)).not.toBeInTheDocument();
+    expect(screen.getByText('showing 15 of 27 rows')).toBeInTheDocument();
   });
 
   it('does not cap short plain tables', () => {
     const md = ['| A | 1 |', '| --- | --- |', '| x | y |', '| 1 | 2 |'].join('\n');
-    const json = JSON.stringify(ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md })).toJSON());
-    expect(json).toContain('max-h-80');
-    expect(json).not.toContain('showing ');
+    const { container } = render(<AnswerMarkdown text={md} />);
+    expect(container.querySelector('.max-h-80')).toBeInTheDocument();
+    expect(screen.queryByText(/showing \d+ of \d+ rows/)).not.toBeInTheDocument();
   });
 });

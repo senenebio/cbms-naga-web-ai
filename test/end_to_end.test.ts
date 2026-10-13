@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Phase D gate — full tool-loop E2E under Node (mock LLM + real WASM warehouse).
  *

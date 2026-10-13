@@ -1,9 +1,8 @@
 /**
  * Phase F — shared sortable result table (ported from the reference UI).
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React, { act } from 'react';
-import createRenderer, { type ReactTestInstance } from 'react-test-renderer';
+import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ResultTable, { sortRows, formatCell, MAX_ROWS_SHOWN } from './ResultTable';
 
 describe('sortRows', () => {
@@ -55,23 +54,17 @@ describe('formatCell', () => {
 });
 
 describe('<ResultTable />', () => {
-  beforeEach(() => {
-    vi.stubGlobal('localStorage', { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() });
-  });
-
   it('renders a truncation note when truncated', () => {
-    const tree = createRenderer.create(
-      React.createElement(ResultTable, { columns: ['a'], rows: [[1]], truncated: true }),
-    );
-    expect(JSON.stringify(tree.toJSON())).toContain('truncated by the read-only SQL gate');
+    render(<ResultTable columns={['a']} rows={[[1]]} truncated />);
+    expect(screen.getByText(/truncated by the read-only SQL gate/)).toBeInTheDocument();
   });
 
   it('caps the rendered rows at MAX_ROWS_SHOWN', () => {
     const rows = Array.from({ length: MAX_ROWS_SHOWN + 20 }, (_, i) => [i]);
-    const tree = createRenderer.create(React.createElement(ResultTable, { columns: ['i'], rows }));
-    const bodyRows = tree.root.findAllByType('tr').length;
+    const { container } = render(<ResultTable columns={['i']} rows={rows} />);
     // header row + MAX_ROWS_SHOWN data rows
-    expect(bodyRows).toBeLessThanOrEqual(1 + MAX_ROWS_SHOWN);
+    expect(container.querySelectorAll('tbody tr').length).toBe(MAX_ROWS_SHOWN);
+    expect(screen.getByText(/Showing first 50 of 70 rows/)).toBeInTheDocument();
   });
 
   it('toggles ascending → descending sort', () => {
@@ -80,16 +73,8 @@ describe('<ResultTable />', () => {
       ['b', 3],
       ['c', 25],
     ];
-    const tree = createRenderer.create(
-      React.createElement(ResultTable, { columns: ['name', 'n'], rows }),
-    );
-    const colBtn = tree.root
-      .findAllByType('button')
-      .find((b) => b.props.children.toString().includes('n'));
-    expect(colBtn).toBeTruthy();
-    act(() => {
-      (colBtn as ReactTestInstance).props.onClick();
-    });
-    expect(JSON.stringify(tree.toJSON())).toContain('▲');
+    render(<ResultTable columns={['name', 'n']} rows={rows} />);
+    fireEvent.click(screen.getByRole('button', { name: 'n' }));
+    expect(screen.getByRole('button', { name: /n ▲/ })).toBeInTheDocument();
   });
 });

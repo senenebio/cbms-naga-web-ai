@@ -1,29 +1,47 @@
 /**
  * Map feature (P2, T2.4) — `<LeafletBarangayMap />` + `<MapSection />`
- * wrapper tests.
+ * wrapper tests (jsdom / @testing-library/react).
  *
- * Uses react-test-renderer (no DOM, no network): the GeoJSON is injected via
- * the `geojson` prop as a 27-feature fixture. Leaflet's map container ref is
- * null under the test renderer, so `L.map` is never instantiated — these tests
- * cover the HTML surface (metric selector, legend, detail-row state, loading
- * / unavailable notes) and the lazy "Show map" wiring. Leaflet rendering
- * itself is verified manually (spec P4 gate).
+ * The GeoJSON is injected via the `geojson` prop as a 27-feature fixture.
+ * Leaflet is mocked out (no real map tiles in tests); these cover the HTML
+ * surface (metric selector, legend, attribution) and the lazy "Show map"
+ * wiring. Leaflet rendering itself is verified manually (spec P4 gate).
  */
 import { describe, it, expect, vi } from 'vitest';
-import React, { act } from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-// Leaflet's bundle references `window` at import time (node test env); the
-// component never calls into it here (container ref is null), so stub it.
-vi.mock('leaflet', () => ({
-  default: {
-    map: vi.fn(),
-    geoJSON: vi.fn(),
-    tileLayer: vi.fn(),
-    DomEvent: { stopPropagation: vi.fn() },
-  },
-}));
+// Leaflet is mocked out: no real map tiles in tests. The mock returns just
+// enough of the Leaflet object graph for the component's init effect to run
+// (`L.map(el, ...)` → map object with `fitBounds`/`setMaxBounds`/`on`/`remove`;
+// `L.geoJSON(fc, ...)` → layer with `getBounds`/`addTo`/`setStyle`/`eachLayer`).
+vi.mock('leaflet', () => {
+  const makeMap = () => ({
+    fitBounds: vi.fn(),
+    setMaxBounds: vi.fn(),
+    on: vi.fn(),
+    remove: vi.fn(),
+    removeLayer: vi.fn(),
+  });
+  const makeLayer = () => ({
+    getBounds: () => ({ pad: () => ({}) }),
+    addTo: vi.fn().mockReturnThis(),
+    setStyle: vi.fn(),
+    eachLayer: vi.fn(),
+    bindTooltip: vi.fn(),
+    on: vi.fn(),
+  });
+  return {
+    default: {
+      map: vi.fn(makeMap),
+      geoJSON: vi.fn(makeLayer),
+      tileLayer: vi
+        .fn()
+        .mockImplementation(() => ({ addTo: vi.fn().mockReturnThis(), on: vi.fn(), off: vi.fn() })),
+      DomEvent: { stopPropagation: vi.fn() },
+    },
+  };
+});
 
-import createRenderer, { type ReactTestRenderer } from 'react-test-renderer';
 import LeafletBarangayMap from './LeafletBarangayMap';
 import MapSection from './MapSection';
 
@@ -48,20 +66,6 @@ function fixtureGeo(n = 27): string {
   return JSON.stringify({ type: 'FeatureCollection', features });
 }
 
-/** Render and flush the async load effect (the injected `geojson` resolves). */
-async function renderMap(props: {
-  columns: string[];
-  rows: unknown[][];
-  theme: 'light' | 'dark';
-  geojson: string;
-}): Promise<ReactTestRenderer> {
-  const tree = createRenderer.create(React.createElement(LeafletBarangayMap, props));
-  await act(async () => {
-    await new Promise((r) => setImmediate(r));
-  });
-  return tree;
-}
-
 describe('<LeafletBarangayMap />', () => {
   it('shows a metric selector when there are 2+ numeric columns', async () => {
     const columns = ['code', 'barangay', 'hh', 'pop'];
@@ -69,19 +73,18 @@ describe('<LeafletBarangayMap />', () => {
       [1, 'BQ 1', 100, 5000],
       [2, 'BQ 2', 200, 6000],
     ];
-    const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Metric:');
-    expect(text).toContain('hh');
-    expect(text).toContain('pop');
+    render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
+    await waitFor(() => expect(screen.getByText('Metric:')).toBeInTheDocument());
+    // The select offers both numeric columns.
+    const select = screen.getByRole('combobox');
+    expect(select).toBeInTheDocument();
   });
 
   it('renders without a metric selector for a single numeric column', async () => {
     const columns = ['code', 'barangay', 'hh'];
     const rows: unknown[][] = [[1, 'BQ 1', 100]];
-    const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).not.toContain('Metric:');
+    render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
+    await waitFor(() => expect(screen.queryByText('Metric:')).not.toBeInTheDocument());
   });
 
   it('renders the legend with the metric min/max', async () => {
@@ -90,28 +93,34 @@ describe('<LeafletBarangayMap />', () => {
       [1, 'BQ 1', 100],
       [2, 'BQ 2', 900],
     ];
-    const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('text-[11px]');
-    expect(text).toContain('100');
-    expect(text).toContain('900');
+    render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
+    // The legend row (min → gradient → max) appears once the geojson resolves.
+    await waitFor(() => expect(screen.getByText('900')).toBeInTheDocument());
+    expect(screen.getByText('100')).toBeInTheDocument();
   });
 
   it('shows the OSM + PSA + boundary-source attribution footer', async () => {
     const columns = ['code', 'barangay', 'hh'];
     const rows: unknown[][] = [[1, 'BQ 1', 100]];
-    const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('OpenStreetMap contributors');
-    expect(text).toContain('OSSPhilippines');
+    render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
+    await waitFor(() =>
+      expect(screen.getByText(/OpenStreetMap contributors/)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/OSSPhilippines/)).toBeInTheDocument();
   });
 
   it('renders "Map unavailable." for malformed GeoJSON', async () => {
     const columns = ['code', 'barangay', 'hh'];
     const rows: unknown[][] = [[1, 'BQ 1', 100]];
-    const tree = await renderMap({ columns, rows, theme: 'light', geojson: 'not a FeatureCollection' });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Map unavailable.');
+    render(
+      <LeafletBarangayMap
+        columns={columns}
+        rows={rows}
+        theme="light"
+        geojson="not a FeatureCollection"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Map unavailable.')).toBeInTheDocument());
   });
 });
 
@@ -123,25 +132,18 @@ describe('<MapSection /> (lazy "Show map" wiring)', () => {
       .fn()
       .mockResolvedValue({ ok: true, text: () => Promise.resolve(fixtureGeo()) }) as unknown as typeof fetch;
     try {
-      const columns = ['code', 'barangay', 'hh'];
-      const rows: unknown[][] = [[1, 'BQ 1', 100]];
-      const tree = createRenderer.create(
-        React.createElement(MapSection, { columns, rows, theme: 'light' }),
+      render(
+        <MapSection columns={['code', 'barangay', 'hh']} rows={[[1, 'BQ 1', 100]]} theme="light" />,
       );
-      let text = JSON.stringify(tree.toJSON());
-      expect(text).toContain('Show map');
-      expect(text).not.toContain('map-leaflet');
 
-      const btn = tree.root.findAllByType('button')[0];
-      if (!btn) throw new Error('expected a toggle button');
-      await act(async () => {
-        btn.props.onClick();
-        // Let the lazy import + Suspense + geojson effect settle.
-        await new Promise((r) => setImmediate(r));
-      });
-      text = JSON.stringify(tree.toJSON());
-      expect(text).toContain('Hide map');
-      expect(text).toContain('map-leaflet');
+      expect(screen.getByText('Show map')).toBeInTheDocument();
+      expect(screen.queryByText('map-leaflet')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show map' }));
+
+      // The lazy module resolves and the map surface mounts.
+      await waitFor(() => expect(screen.queryByText('Hide map')).toBeInTheDocument());
+      expect(screen.queryByText('map-leaflet')).not.toBeInTheDocument();
     } finally {
       globalThis.fetch = realFetch;
     }

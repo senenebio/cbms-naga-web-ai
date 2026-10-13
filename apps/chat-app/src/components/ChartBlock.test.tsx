@@ -1,16 +1,16 @@
 /**
  * Advanced charts (Phase P3) — `<ChartBlock />` smoke tests.
  *
- * Uses react-test-renderer (no DOM): Recharts' `ResponsiveContainer` renders
- * an empty placeholder without a real layout, so these tests assert the
- * wrapper/title/fallback render without crashing — not the SVG internals.
+ * Recharts' `ResponsiveContainer` renders an empty placeholder in jsdom
+ * (no real layout), so these tests assert the wrapper/title/fallback render
+ * without crashing — not the SVG internals.
  *
  * `<ChartBlock />` loads the Recharts renderer lazily (`React.lazy`), so the
  * chart tests flush the dynamic `import()` before asserting (see `flush`).
  */
 import { describe, it, expect } from 'vitest';
-import React, { act } from 'react';
-import createRenderer from 'react-test-renderer';
+import { act } from 'react';
+import { render, screen } from '@testing-library/react';
 import ChartBlock from './ChartBlock';
 import type { ChartSpec } from '@repo/llm/chart.js';
 
@@ -25,10 +25,8 @@ function flush() {
 describe('<ChartBlock />', () => {
   it('renders a note (no chart) when the spec has no data', () => {
     const spec: ChartSpec = { type: 'bar', data: [], xKey: 'name', series: ['value'] };
-    const tree = createRenderer.create(
-      React.createElement(ChartBlock, { spec, theme: 'light' }),
-    );
-    expect(JSON.stringify(tree.toJSON())).toContain('No chart data to display.');
+    render(<ChartBlock spec={spec} theme="light" />);
+    expect(screen.getByText('No chart data to display.')).toBeInTheDocument();
   });
 
   it('renders the title for a bar chart (smoke test)', async () => {
@@ -43,14 +41,11 @@ describe('<ChartBlock />', () => {
       series: ['value'],
       stacked: false,
     };
-    const tree = createRenderer.create(
-      React.createElement(ChartBlock, { spec, theme: 'light' }),
-    );
+    render(<ChartBlock spec={spec} theme="light" />);
     // The title is in the wrapper (renders immediately, before the lazy load).
-    expect(JSON.stringify(tree.toJSON())).toContain('Households by barangay');
+    expect(screen.getByText('Households by barangay')).toBeInTheDocument();
     // Flush the lazy Recharts renderer; the chart body must render without crashing.
     await flush();
-    expect(tree.toJSON()).not.toBeNull();
   }, 10000);
 
   it('renders without crashing for each chart type', async () => {
@@ -68,11 +63,8 @@ describe('<ChartBlock />', () => {
         series,
         stacked: false,
       };
-      const tree = createRenderer.create(
-        React.createElement(ChartBlock, { spec, theme: 'dark' }),
-      );
+      render(<ChartBlock spec={spec} theme="dark" />);
       await flush();
-      expect(tree.toJSON()).not.toBeNull();
     }
   }, 10000);
 });

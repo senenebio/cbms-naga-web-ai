@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Phase C gate — the WASM warehouse under Node/vitest.
  *

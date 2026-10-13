@@ -18,6 +18,8 @@ export default defineConfig({
       'packages/brand-config/test/**/*.test.ts',
       'packages/ui/**/*.test.{ts,tsx}',
     ],
-    environment: 'node',
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

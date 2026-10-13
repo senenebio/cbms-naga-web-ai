@@ -4,5 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Shared UI: Tailwind v4 globals + shadcn/ui primitives (source-only; compiled by the consuming app's bundler).",
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "devDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
 }

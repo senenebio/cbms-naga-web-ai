@@ -1,14 +1,12 @@
 /**
- * Phase F — App shell tests (ported from the reference UI, adapted to the
- * driver-free core: injected `openWarehouse` + `resolveProvider` stubs, no
- * network, no duckdb-wasm, no real localStorage).
+ * Phase F — App shell tests (jsdom / @testing-library/react).
+ *
+ * Ported from react-test-renderer to @testing-library/react (React 19).
+ * The app receives injected `openWarehouse` + `resolveProvider` stubs —
+ * no network, no duckdb-wasm, no real localStorage.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React, { act } from 'react';
-import createRenderer, {
-  type ReactTestInstance,
-  type ReactTestRenderer,
-} from 'react-test-renderer';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App, { type AppDeps } from './App';
 import { BRAND } from './brand';
 import { stubEngine } from './testStubs';
@@ -24,13 +22,11 @@ function unconfigured() {
 }
 
 async function renderApp(deps: AppDeps = {}) {
-  let tree: ReactTestRenderer | undefined;
-  await act(async () => {
-    tree = createRenderer.create(React.createElement(App, { deps }));
-    await new Promise((r) => setTimeout(r, 0));
-    await new Promise((r) => setImmediate(r));
-  });
-  return tree!;
+  const view = render(<App deps={deps} />);
+  // Let the initial warehouse-open effect settle.
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => setImmediate(r));
+  return view;
 }
 
 describe('App (static, chat + settings only)', () => {
@@ -47,32 +43,29 @@ describe('App (static, chat + settings only)', () => {
 
   it('renders the topbar, chat panel, and a loading note before the warehouse opens', async () => {
     const openWarehouse = vi.fn(async () => new Promise<BrowserWarehouseHandle>(() => {})); // never resolves
-    const tree = await renderApp({ openWarehouse, resolveProvider: unconfigured() });
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain(BRAND.name);
-    expect(text).toContain('Loading the warehouse');
+    await renderApp({ openWarehouse, resolveProvider: unconfigured() });
+    expect(screen.getByText(BRAND.name)).toBeInTheDocument();
+    expect(screen.getByText(/Loading the warehouse/)).toBeInTheDocument();
   });
 
   it('shows the unconfigured model label and opens the settings dialog', async () => {
-    const tree = await renderApp({
+    await renderApp({
       openWarehouse: stubWarehouse(),
       resolveProvider: unconfigured(),
     });
-    expect(JSON.stringify(tree.toJSON())).toContain('not configured');
+    // The model label updates once the warehouse opens + provider resolves.
+    await vi.waitFor(() => expect(screen.getByText(/not configured/)).toBeInTheDocument());
 
-    const gear = tree.root
-      .findAllByType('button')
-      .find((b) => b.props['aria-label'] === 'Open LLM settings');
-    expect(gear).toBeTruthy();
-    await act(async () => {
-      (gear as ReactTestInstance).props.onClick();
-    });
-    expect(JSON.stringify(tree.toJSON())).toContain('LLM settings');
+    const gear = screen.getByRole('button', { name: 'Open LLM settings' });
+    fireEvent.click(gear);
+    await vi.waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'LLM settings' })).toBeInTheDocument(),
+    );
   });
 
   it('surfaces the warehouse error when openWarehouse rejects', async () => {
     const openWarehouse = vi.fn(async () => Promise.reject(new Error('parquet fetch failed')));
-    const tree = await renderApp({ openWarehouse, resolveProvider: unconfigured() });
-    expect(JSON.stringify(tree.toJSON())).toContain('parquet fetch failed');
+    await renderApp({ openWarehouse, resolveProvider: unconfigured() });
+    expect(screen.getByText(/parquet fetch failed/)).toBeInTheDocument();
   });
 });

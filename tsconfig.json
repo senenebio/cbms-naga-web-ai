@@ -37,6 +37,7 @@
     "test",
     "packages/brand-config/test",
     "vitest.config.ts",
+    "vitest-jest-dom.d.ts",
     "apps/chat-app/vite.config.ts"
   ]
 }

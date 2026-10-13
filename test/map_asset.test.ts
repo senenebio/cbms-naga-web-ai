@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * P1 T1.4 — map asset integrity (WASM).
  *

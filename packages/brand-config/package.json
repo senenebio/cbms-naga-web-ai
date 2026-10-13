@@ -4,5 +4,9 @@
   "private": true,
   "type": "module",
   "description": "White-label brand identity + theming tokens for chat apps (source-only; compiled by the consuming app's bundler).",
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "devDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
 }

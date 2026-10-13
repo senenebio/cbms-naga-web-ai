@@ -3,17 +3,13 @@
  * to the driver-free core: stub engine + stub LLM client, no network, no
  * duckdb-wasm, no localStorage).
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React, { act } from 'react';
-import createRenderer, {
-  type ReactTestRendererJSON,
-  type ReactTestInstance,
-  type ReactTestRenderer,
-} from 'react-test-renderer';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { act } from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ChatPanel from './ChatPanel';
 import { stubEngine, StubLlm, ChartStubLlm } from '../testStubs';
-
-let tree: ReactTestRenderer;
+import type { LLMClient } from '@repo/llm/types.js';
+import type { SqlEngine } from '@repo/llm/types.js';
 
 /** Flush pending promises (the async chatQuestion generator). */
 function flush() {
@@ -23,119 +19,75 @@ function flush() {
   });
 }
 
-function findInput(root: ReactTestInstance): ReactTestInstance {
-  return root.findByType('input') as ReactTestInstance;
-}
-
-function setDraft(root: ReactTestInstance, value: string) {
-  const input = findInput(root);
-  act(() => {
-    input.props.onChange({ target: { value } });
-  });
-}
-
-function submit(root: ReactTestInstance) {
-  const form = root.findByType('form');
-  act(() => {
-    form.props.onSubmit({ preventDefault: () => {} });
-  });
-}
-
 const SAMPLE_ANSWER =
   '## Headline\n\n**1,200** households were surveyed, of which **600** were urban.';
 
+function renderPanel(props: {
+  engine: SqlEngine;
+  client: LLMClient | null;
+  theme?: 'light' | 'dark';
+}) {
+  return render(
+    <ChatPanel
+      engine={props.engine}
+      client={props.client}
+      onOpenSettings={() => {}}
+      theme={props.theme}
+    />,
+  );
+}
+
 describe('ChatPanel', () => {
+  // The "Show SQL" toggle persists to localStorage (shared across tests in
+  // jsdom) — reset it so every test starts from the default (off) state.
   beforeEach(() => {
-    vi.stubGlobal('localStorage', {
-      getItem: vi.fn().mockReturnValue('false'),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    });
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
+    localStorage.removeItem('cbms-show-sql');
   });
 
   it('renders the demo chips, New chat, and Show SQL controls', () => {
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine: stubEngine(),
-        client: new StubLlm(),
-        onOpenSettings: () => {},
-      }),
-    );
-    // demo chips render
-    const chipText = tree.root
-      .findAllByType('button')
-      .map((b) => b.props.children)
-      .join(' ');
-    expect(chipText).toContain('households');
+    renderPanel({ engine: stubEngine(), client: new StubLlm() });
+    expect(screen.getByText(/households/)).toBeInTheDocument();
   });
 
   it('shows the unconfigured hint when no client is set', () => {
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine: stubEngine(),
-        client: null,
-        onOpenSettings: () => {},
-      }),
-    );
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('No LLM configured');
+    renderPanel({ engine: stubEngine(), client: null });
+    expect(screen.getByText(/No LLM configured/)).toBeInTheDocument();
   });
 
   it('streams a question through to a markdown answer + SQL/rows', async () => {
     const llm = new StubLlm({ answer: SAMPLE_ANSWER });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine: stubEngine(),
-        client: llm,
-        onOpenSettings: () => {},
-      }),
-    );
+    renderPanel({ engine: stubEngine(), client: llm });
 
     // Turn on Show SQL so the SQL/rows sections render.
-    const showSqlBtn = tree.root.findByProps({ 'aria-pressed': false });
-    act(() => {
-      showSqlBtn.props.onClick();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show SQL' }));
 
-    setDraft(tree.root, 'How many households?');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'How many households?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
-    const out = tree.toJSON() as ReactTestRendererJSON;
-    const text = JSON.stringify(out);
     expect(llm.calls).toBeGreaterThanOrEqual(2);
-    expect(text).toContain('1,200');
+    expect(screen.getByText(/1,200/)).toBeInTheDocument();
     // Show SQL was toggled on: the SQL and raw-rows sections render.
-    // (`SQL {n}` / `Raw rows {n}` are split text nodes, so assert the labels + the SQL body.)
-    expect(text).toContain('SQL');
-    expect(text).toContain('Raw rows');
-    expect(text).toContain('SELECT 1 AS n');
+    expect(screen.getByText(/SQL \d+/)).toBeInTheDocument();
+    expect(screen.getByText(/Raw rows/)).toBeInTheDocument();
+    expect(screen.getByText(/SELECT 1 AS n/)).toBeInTheDocument();
   }, 10000);
 
   it('renders a make_chart result inline after the answer', async () => {
     const llm = new ChartStubLlm({ answer: 'See the chart below.' });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine: stubEngine(),
-        client: llm,
-        onOpenSettings: () => {},
-        theme: 'light',
-      }),
-    );
+    renderPanel({ engine: stubEngine(), client: llm, theme: 'light' });
 
-    setDraft(tree.root, 'Chart households by barangay.');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Chart households by barangay.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('See the chart below.');
+    expect(screen.getByText('See the chart below.')).toBeInTheDocument();
     // The chart is gated on the done flag, which has fired — the title renders inline.
-    expect(text).toContain('Households by barangay');
+    expect(screen.getByText('Households by barangay')).toBeInTheDocument();
   }, 10000);
 
   it('shows a "Show map" trigger for a geographic result (code + numeric)', async () => {
@@ -147,27 +99,23 @@ describe('ChatPanel', () => {
       ['code', 'barangay', 'hh'],
     );
     const llm = new StubLlm({ answer: 'Households by barangay.' });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine,
-        client: llm,
-        onOpenSettings: () => {},
-      }),
-    );
+    renderPanel({ engine, client: llm });
 
-    const showSqlBtn = tree.root.findByProps({ 'aria-pressed': false });
-    act(() => {
-      showSqlBtn.props.onClick();
+    // Click, then await a microtask so React flushes the state update before
+    // the interaction continues (avoids a queued update being dropped when a
+    // subsequent event triggers a render in the same task).
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Show SQL' }));
     });
 
-    setDraft(tree.root, 'Households by barangay?');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Households by barangay?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Raw rows');
-    expect(text).toContain('Show map');
+    expect(screen.getByText(/Raw rows/)).toBeInTheDocument();
+    expect(screen.getByText('Show map')).toBeInTheDocument();
   }, 10000);
 
   it('shows the "Show map" trigger for a geographic result WITHOUT toggling Show SQL', async () => {
@@ -179,80 +127,54 @@ describe('ChatPanel', () => {
       ['code', 'barangay', 'hh'],
     );
     const llm = new StubLlm({ answer: 'Households by barangay.' });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine,
-        client: llm,
-        onOpenSettings: () => {},
-      }),
-    );
+    renderPanel({ engine, client: llm });
 
     // Do NOT toggle Show SQL (it defaults off) — the map must still be reachable.
-    setDraft(tree.root, 'Households by barangay?');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Households by barangay?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
-    const text = JSON.stringify(tree.toJSON());
     // The raw-rows table stays behind the toggle…
-    expect(text).not.toContain('Raw rows');
+    expect(screen.queryByText(/Raw rows/)).not.toBeInTheDocument();
     // …but the map trigger is not gated on it.
-    expect(text).toContain('Show map');
+    expect(screen.getByText('Show map')).toBeInTheDocument();
   }, 10000);
 
   it('shows no map trigger for a non-geographic result', async () => {
     const engine = stubEngine([[100]], ['total']);
     const llm = new StubLlm({ answer: 'Total: 100.' });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine,
-        client: llm,
-        onOpenSettings: () => {},
-      }),
-    );
+    renderPanel({ engine, client: llm });
 
-    const showSqlBtn = tree.root.findByProps({ 'aria-pressed': false });
-    act(() => {
-      showSqlBtn.props.onClick();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show SQL' }));
 
-    setDraft(tree.root, 'Total?');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Total?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
-    const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('Raw rows');
-    expect(text).not.toContain('Show map');
+    expect(screen.getByText(/Raw rows/)).toBeInTheDocument();
+    expect(screen.queryByText('Show map')).not.toBeInTheDocument();
   }, 10000);
 
   it('New chat clears the conversation', async () => {
     const llm = new StubLlm({ answer: 'One household.' });
-    tree = createRenderer.create(
-      React.createElement(ChatPanel, {
-        engine: stubEngine(),
-        client: llm,
-        onOpenSettings: () => {},
-      }),
-    );
+    renderPanel({ engine: stubEngine(), client: llm });
 
-    setDraft(tree.root, 'How many households?');
-    submit(tree.root);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'How many households?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
     await flush();
     await flush();
 
     // The user message is in the tree.
-    expect(JSON.stringify(tree.toJSON())).toContain('How many households?');
+    expect(screen.getByText('How many households?')).toBeInTheDocument();
 
-    const newChatBtn = tree.root
-      .findAllByType('button')
-      .find((b) => b.props.title === 'Clear the conversation and start a blank chat');
-    expect(newChatBtn).toBeTruthy();
-    act(() => {
-      (newChatBtn as ReactTestInstance).props.onClick();
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
     await flush();
 
-    expect(JSON.stringify(tree.toJSON())).not.toContain('How many households?');
+    expect(screen.queryByText('How many households?')).not.toBeInTheDocument();
   }, 10000);
 });
