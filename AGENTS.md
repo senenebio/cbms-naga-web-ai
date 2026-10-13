@@ -15,8 +15,8 @@ White-label, browser-only AI interpretation platform. CBMS 2024 (Naga City) is b
 - `apps/chat-app/` — React app (ChatLayout, Composer, SettingsMenu, chat feed, BYOK dialog) + browser core (warehouse, LLM client, provider)
 - `packages/core/` — `@workspace/core`: driver-free core (LLM client, SQL guardrails, schema, map logic, wasm engine); no `node:` / `@duckdb/node-api` imports; imported by both `apps/` and Node tests via `@repo/` alias
 - `packages/ui/` — `@workspace/ui`: Tailwind v4 globals.css (shadcn tokens), shadcn/ui primitives, ChatLayout, Composer, SettingsMenu, useAutoResize
-- `packages/brand-config/` — `@workspace/brand-config`: brand types, CBMS brand #1, `applyBrand()`
-- `data/` — source assets (parquets + data dictionary); `apps/chat-app/public/data/` is build-generated and gitignored
+- `packages/brand-config/` — `@workspace/brand-config`: brand + dataset types, CBMS brand #1 + dataset, `applyBrand()`
+- `data/<brand-id>/` — per-brand source assets (`warehouse/*.parquet`, data dictionary, geojson); `apps/chat-app/public/data/` is build-generated and gitignored. See [docs/DATA-ASSETS.md](docs/DATA-ASSETS.md) for the add-a-brand checklist
 - `test/` — root-level Node tests (WASM E2E, SQL tool, schema, chart, provider)
 
 ## Invariants
@@ -40,5 +40,5 @@ White-label, browser-only AI interpretation platform. CBMS 2024 (Naga City) is b
     `map-feature-spec.md` (implemented; display under reconsideration),
     `openai-endpoint-spec.md` (implemented — single OpenAI-compatible endpoint),
     `monorepo-whitelabel-spec.md` (complete — Phase A–E),
-    `data-aware-brand-spec.md` (draft — brand carries its dataset),
-    `vercel-deployment-spec.md` (draft — per-brand Vercel deployments)
+    `data-aware-brand-deployment-spec.md` (in progress — brand carries its dataset,
+    per-brand Vercel deployments)

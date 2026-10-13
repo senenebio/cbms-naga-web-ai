@@ -1,6 +1,6 @@
 # Spec: Data-Aware Brands + Deployment
 
-**Status:** draft
+**Status:** implemented (Vercel live verification pending — needs a git remote)
 **Date:** 2026-10-13
 **Parent spec:** `monorepo-whitelabel-spec.md` (complete)
 
