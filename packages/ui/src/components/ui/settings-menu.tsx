@@ -1,8 +1,7 @@
 /**
  * SettingsMenu — gear icon that opens a DropdownMenu with:
- *  1. Model selector (curated list, persisted in localStorage)
- *  2. Temperature slider (0–2, step 0.1, persisted)
- *  3. Footer: brand name + version + license + "Connection…" → BYOK dialog
+ *  1. Footer: brand name + version + license
+ *  2. "Connection…" → BYOK dialog
  *
  * The gear replaces the old standalone settings trigger (D6).
  */
@@ -17,26 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './select';
-import { Slider } from './slider';
 
 export interface SettingsMenuProps {
-  /** Curated model IDs for the Select. */
-  models: string[];
-  /** Currently selected model. */
-  model: string;
-  /** Called when the user picks a model. */
-  onModelChange: (model: string) => void;
-  /** Current temperature (0–2). */
-  temperature: number;
-  /** Called when the user moves the slider. */
-  onTemperatureChange: (value: number) => void;
   /** Brand name for the footer. */
   brandName: string;
   /** Brand version for the footer. */
@@ -84,11 +65,6 @@ export function persistModel(model: string): void {
 }
 
 export function SettingsMenu({
-  models,
-  model,
-  onModelChange,
-  temperature,
-  onTemperatureChange,
   brandName,
   brandVersion,
   brandLicense,
@@ -111,42 +87,6 @@ export function SettingsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
-
-        {/* Model selector */}
-        <div className="px-2 py-1.5">
-          <label className="mb-1 block text-xs text-muted-foreground">Model</label>
-          <Select value={model} onValueChange={(v) => onModelChange(v)}>
-            <SelectTrigger className="w-full" aria-label="Model">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              {models.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Temperature slider */}
-        <div className="px-2 py-1.5">
-          <label className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Temperature</span>
-            <span>{temperature.toFixed(1)}</span>
-          </label>
-          <Slider
-            min={0}
-            max={2}
-            step={0.1}
-            value={[temperature]}
-            onValueChange={(v) => {
-              const next = v[0] ?? 0.7;
-              onTemperatureChange(next);
-            }}
-            aria-label="Temperature"
-          />
-        </div>
 
         <DropdownMenuSeparator />
 

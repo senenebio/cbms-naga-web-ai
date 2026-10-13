@@ -19,7 +19,6 @@ import { Composer } from '@workspace/ui/components/composer.js';
 import { SettingsMenu } from '@workspace/ui/components/settings-menu.js';
 import { openWarehouseBrowser, type BrowserWarehouseHandle } from './wasm/engine.js';
 import {
-  readTemperature as readTempFromStorage,
   resolveProvider,
   type KeyValueStorage,
   type ProviderResolution,
@@ -52,8 +51,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
   const [engineError, setEngineError] = useState<string | null>(null);
   const [provider, setProvider] = useState<ProviderResolution | 'init'>('init');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [model, setModel] = useState<string>('');
-  const [temperature, setTemperature] = useState<number>(0.7);
   const warehouseRef = useRef<BrowserWarehouseHandle | null>(null);
   const [theme, setThemeState] = useState<Theme>(() => getInitialTheme());
 
@@ -88,13 +85,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
     setProvider(deps.resolveProvider());
   }, [deps]);
 
-  // Initialize model and temperature from localStorage.
-  useEffect(() => {
-    const storedModel = deps.storage.getItem('chat-model');
-    if (storedModel) setModel(storedModel);
-    setTemperature(readTempFromStorage(deps.storage));
-  }, [deps]);
-
   // Theme: apply the .dark class on <html> + persist.
   useEffect(() => {
     applyTheme(theme);
@@ -124,16 +114,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
       ? provider.masked.model ?? provider.config.model
       : 'No model set';
 
-  const handleModelChange = (m: string) => {
-    setModel(m);
-    deps.storage.setItem('chat-model', m);
-  };
-
-  const handleTemperatureChange = (v: number) => {
-    setTemperature(v);
-    deps.storage.setItem('chat-temperature', String(v));
-  };
-
   return (
     <ChatLayout
       title={BRAND.name}
@@ -149,11 +129,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <SettingsMenu
-            models={['gpt-4o', 'gpt-4o-mini', 'llama3.1:8b', 'qwen3:8b']}
-            model={model}
-            onModelChange={handleModelChange}
-            temperature={temperature}
-            onTemperatureChange={handleTemperatureChange}
             brandName={BRAND.name}
             brandVersion={BRAND.version}
             brandLicense={BRAND.license}
