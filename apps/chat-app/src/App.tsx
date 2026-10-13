@@ -12,9 +12,12 @@
  * no duckdb-wasm, no real localStorage.
  */
 import { useEffect, useRef, useState } from 'react';
+import { MoonIcon, SettingsIcon, SunIcon } from 'lucide-react';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
+import { Button } from '@workspace/ui/components/button';
 import type { BrowserWarehouseHandle } from './wasm/engine.js';
 import { openWarehouseBrowser } from './wasm/engine.js';
+import { BRAND } from './brand.js';
 import { resolveProvider, type KeyValueStorage, type ProviderResolution } from './core/provider.js';
 import ChatPanel from './components/ChatPanel.js';
 import SettingsDialog from './components/SettingsDialog.js';
@@ -84,29 +87,33 @@ export default function App({ deps = {} }: { deps?: AppDeps }) {
           ? 'Model: not configured — open Settings'
           : `Model: ${resolution.config.model}`;
 
+  const themeTitle = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+
   return (
-    <div className="app">
-      <header className="topbar">
-        <span className="title">CBMS Naga City — AI interpretation demo (CBMS 2024)</span>
-        <span className="model-label">{modelLabel}</span>
-        <button
+    <div className="flex h-dvh flex-col">
+      <header className="flex items-center gap-2 border-b px-4 py-3">
+        <span className="text-base font-bold">{BRAND.name}</span>
+        <span className="ml-auto text-xs text-muted-foreground">{modelLabel}</span>
+        <Button
           type="button"
-          className="settings-toggle"
+          variant="ghost"
+          size="icon"
+          aria-label={themeTitle}
+          title={themeTitle}
+          onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+        >
+          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           aria-label="Open LLM settings"
           title="LLM settings"
           onClick={() => setSettingsOpen(true)}
         >
-          ⚙️
-        </button>
-        <button
-          type="button"
-          className="theme-toggle"
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to light mode'}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to light mode'}
-          onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
+          <SettingsIcon />
+        </Button>
       </header>
 
       {settingsOpen && (
@@ -117,16 +124,14 @@ export default function App({ deps = {} }: { deps?: AppDeps }) {
         />
       )}
 
-      <main className="panes single">
-        <section className="panel">
-          <ChatPanel
-            engine={engine}
-            client={client}
-            engineError={warehouseError}
-            onOpenSettings={() => setSettingsOpen(true)}
-            theme={theme}
-          />
-        </section>
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-4">
+        <ChatPanel
+          engine={engine}
+          client={client}
+          engineError={warehouseError}
+          onOpenSettings={() => setSettingsOpen(true)}
+          theme={theme}
+        />
       </main>
     </div>
   );
