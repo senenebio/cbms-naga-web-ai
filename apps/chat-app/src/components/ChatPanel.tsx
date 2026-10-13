@@ -7,6 +7,7 @@
  * `messages`, `busy`, etc. come from the `useChat` hook (in App).
  */
 import { useEffect, useRef, useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { ChatMsg } from '../hooks/use-chat.js';
 import type { Theme } from '../theme.js';
@@ -28,8 +29,9 @@ function Thinking({ startedAt }: { startedAt: number }) {
     return () => clearInterval(timer);
   }, [startedAt]);
   return (
-    <div className="text-xs text-muted-foreground">
-      Thinking… {secs}s (querying the warehouse via the LLM)
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Sparkles className="size-4 animate-pulse text-primary" />
+      <span>Thinking… {secs}s</span>
     </div>
   );
 }
@@ -58,12 +60,12 @@ export default function ChatPanel({
   const messagesEl = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the newest message (rAF to avoid layout thrash on
-  // per-token streaming updates).
+  // per-token streaming updates). Smooth scroll for new messages.
   useEffect(() => {
     const el = messagesEl.current;
     if (!el) return;
     const raf = requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight });
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     });
     return () => cancelAnimationFrame(raf);
   }, [messages]);
