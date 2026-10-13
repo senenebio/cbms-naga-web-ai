@@ -54,7 +54,7 @@ describe('<AnswerMarkdown />', () => {
     );
     const json = tree.toJSON()!;
     expect(JSON.stringify(json)).toContain('1,200');
-    expect(JSON.stringify(json)).toContain('callout');
+    expect(JSON.stringify(json)).toContain('border-brand-primary');
   });
 
   it('renders comparison bars for a 2-column numeric table', () => {
@@ -68,7 +68,7 @@ describe('<AnswerMarkdown />', () => {
     ].join('\n');
     const tree = ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md }));
     const json = tree.toJSON()!;
-    expect(JSON.stringify(json)).toContain('bars');
+    expect(JSON.stringify(json)).toContain('grid-cols-[minmax(120px,160px)_1fr_80px]');
     expect(JSON.stringify(json)).toContain('A');
   });
 
@@ -78,21 +78,21 @@ describe('<AnswerMarkdown />', () => {
     const tree = ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md }));
     const json = JSON.stringify(tree.toJSON());
     // Not a bar table (4 columns) → plain capped table.
-    expect(json).toContain('table-scroll');
+    expect(json).toContain('max-h-80');
     expect(json).toContain('B0');
     // 27 data rows: rows 0..14 shown, row 15 (B15) is the first hidden one.
     expect(json).toContain(`B${MAX_TABLE_ROWS_SHOWN - 1}`);
     // B15 is the first hidden row (B150+ do not exist, so this is unambiguous).
     expect(json).not.toContain(`B${MAX_TABLE_ROWS_SHOWN}`);
     // The note is a template literal, so the renderer splits it into children.
-    expect(json).toContain('table-more');
+    expect(json).toContain('border-t');
     expect(json).toContain('"27"');
   });
 
   it('does not cap short plain tables', () => {
     const md = ['| A | 1 |', '| --- | --- |', '| x | y |', '| 1 | 2 |'].join('\n');
     const json = JSON.stringify(ReactTestRenderer.create(React.createElement(AnswerMarkdown, { text: md })).toJSON());
-    expect(json).toContain('table-scroll');
+    expect(json).toContain('max-h-80');
     expect(json).not.toContain('showing ');
   });
 });
