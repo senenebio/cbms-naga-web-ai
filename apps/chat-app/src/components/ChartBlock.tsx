@@ -13,15 +13,9 @@
 import { Suspense, lazy } from 'react';
 import type { ChartSpec } from '@repo/llm/chart.js';
 import type { Theme } from '../theme.js';
-import type { Palette } from './ChartRenderer.js';
+import { resolvePalette } from './palette.js';
 
 const ChartRenderer = lazy(() => import('./ChartRenderer.js'));
-
-/** Mirrors the `:root` / `.dark` custom properties in styles.css. */
-const PALETTES: Record<Theme, Palette> = {
-  light: { ink: '#1f2430', muted: '#6b7280', border: '#e2e5ea', panel: '#ffffff', surface: '#fbfcfe' },
-  dark: { ink: '#e8ecf2', muted: '#9aa3b2', border: '#2a3140', panel: '#171c24', surface: '#1a2029' },
-};
 
 interface ChartBlockProps {
   spec: ChartSpec;
@@ -29,7 +23,7 @@ interface ChartBlockProps {
 }
 
 export default function ChartBlock({ spec, theme }: ChartBlockProps) {
-  const palette = PALETTES[theme];
+  const palette = resolvePalette(theme);
   const data = spec.data;
   const title = spec.title ? (
     <figcaption className="mb-2 text-xs font-medium">{spec.title}</figcaption>

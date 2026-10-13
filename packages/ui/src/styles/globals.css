@@ -38,6 +38,19 @@
   /* Brand accent (overwritten at runtime by applyBrand). */
   --brand-primary: #2563eb;
   --brand-primary-foreground: #ffffff;
+
+  /* Chart / map tokens (resolved into JS palettes in `components/palette.ts`; */
+  /* SVG paint attributes can't reference var() directly). */
+  --chart-ink: #1f2430;
+  --chart-muted: #6b7280;
+  --chart-border: #e2e5ea;
+  --chart-panel: #ffffff;
+  --chart-surface: #fbfcfe;
+  --chart-1: var(--brand-primary);
+  --chart-2: #16a34a;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
 }
 
 .dark {
@@ -60,6 +73,17 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
+  --chart-ink: #e8ecf2;
+  --chart-muted: #9aa3b2;
+  --chart-border: #2a3140;
+  --chart-panel: #171c24;
+  --chart-surface: #1a2029;
+  --chart-1: var(--brand-primary);
+  --chart-2: #22c55e;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #a78bfa;
 }
 
 @theme inline {

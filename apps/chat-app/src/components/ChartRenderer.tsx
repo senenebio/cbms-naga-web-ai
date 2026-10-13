@@ -34,17 +34,10 @@ import {
   YAxis,
 } from 'recharts';
 import type { ChartType } from '@repo/llm/chart.js';
+import { type Palette } from './palette.js';
 
-export interface Palette {
-  ink: string;
-  muted: string;
-  border: string;
-  panel: string;
-  surface: string;
-}
-
-/** Multi-series / pie palette (accent first, then stable companions). */
-const SERIES_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const seriesColor = (palette: Palette, i: number) =>
+  palette.series[i % palette.series.length] ?? '#2563eb';
 
 const CHART_HEIGHT = 280;
 
@@ -90,7 +83,7 @@ export default function ChartRenderer({
                 key={s}
                 dataKey={s}
                 stackId={stacked ? 'stack' : undefined}
-                fill={SERIES_COLORS[i % SERIES_COLORS.length]}
+                fill={seriesColor(palette, i)}
               />
             ))}
           </BarChart>
@@ -109,8 +102,8 @@ export default function ChartRenderer({
                 key={s}
                 type="monotone"
                 dataKey={s}
-                stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                dot={{ r: 2, fill: SERIES_COLORS[i % SERIES_COLORS.length] }}
+                stroke={seriesColor(palette, i)}
+                dot={{ r: 2, fill: seriesColor(palette, i) }}
               />
             ))}
           </LineChart>
@@ -130,8 +123,8 @@ export default function ChartRenderer({
                 type="monotone"
                 dataKey={s}
                 stackId={stacked ? 'stack' : undefined}
-                stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                fill={SERIES_COLORS[i % SERIES_COLORS.length]}
+                stroke={seriesColor(palette, i)}
+                fill={seriesColor(palette, i)}
                 fillOpacity={0.35}
               />
             ))}
@@ -148,7 +141,7 @@ export default function ChartRenderer({
               isAnimationActive={false}
             >
               {data.map((row, i) => (
-                <Cell key={String(row[xKey])} fill={SERIES_COLORS[i % SERIES_COLORS.length]} />
+                <Cell key={String(row[xKey])} fill={seriesColor(palette, i)} />
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} />
@@ -163,7 +156,7 @@ export default function ChartRenderer({
             <XAxis dataKey={xKey} {...axisProps} />
             <YAxis dataKey={series[0]} {...axisProps} />
             <Tooltip contentStyle={tooltipStyle} />
-            <Scatter data={data} fill={SERIES_COLORS[0]} />
+            <Scatter data={data} fill={seriesColor(palette, 0)} />
           </ScatterChart>
         </ResponsiveContainer>
       )}

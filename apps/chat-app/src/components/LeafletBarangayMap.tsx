@@ -28,6 +28,7 @@ import {
   type BarangayFeature,
 } from '@repo/map/geo.js';
 import { isRural } from '@repo/data.js';
+import { resolvePalette } from './palette.js';
 import type { Theme } from '../theme.js';
 
 const GEO_URL = '/data/naga-barangays.geojson';
@@ -46,19 +47,6 @@ function loadGeo(): Promise<string> {
   }
   return geoPromise;
 }
-
-/** Mirrors the `:root` / `.dark` custom properties in styles.css. */
-interface MapPalette {
-  ink: string;
-  muted: string;
-  border: string;
-  panel: string;
-  surface: string;
-}
-const PALETTES: Record<Theme, MapPalette> = {
-  light: { ink: '#1f2430', muted: '#6b7280', border: '#e2e5ea', panel: '#ffffff', surface: '#fbfcfe' },
-  dark: { ink: '#e8ecf2', muted: '#9aa3b2', border: '#2a3140', panel: '#171c24', surface: '#1a2029' },
-};
 
 function formatValue(v: number | null): string {
   return v === null ? 'n/a' : String(v);
@@ -132,7 +120,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     };
   }, [features, key, metric, rows, columns]);
 
-  const palette = PALETTES[theme];
+  const palette = resolvePalette(theme);
 
   // Map init: Leaflet map + OSM basemap + choropleth layer. The map is
   // (re)created only when the asset/theme changes — metric/selection changes
