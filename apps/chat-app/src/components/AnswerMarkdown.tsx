@@ -128,19 +128,22 @@ function ComparisonBars({ rows }: { rows: string[][] }) {
   const nums = items.map((i) => cellNumber(i.value)).filter((n) => Number.isFinite(n));
   const max = nums.length > 0 ? Math.max(...nums) : 0;
   return (
-    <div className="bars">
+    <div className="my-2 flex flex-col gap-1.5">
       {items.map((item, i) => {
         const v = cellNumber(item.value);
         const pct = max > 0 && Number.isFinite(v) ? Math.max((v / max) * 100, 6) : 0;
         return (
-          <div className="bar-row" key={`${item.label}-${i}`}>
-            <span className="bar-label" title={item.label}>
+          <div
+            className="grid grid-cols-[minmax(120px,160px)_1fr_80px] items-center gap-2 text-xs"
+            key={`${item.label}-${i}`}
+          >
+            <span className="truncate text-left font-medium" title={item.label}>
               {item.label}
             </span>
-            <span className="bar-track">
-              <span className="bar-fill" style={{ width: `${pct}%` }} />
+            <span className="h-3.5 overflow-hidden rounded-full bg-muted">
+              <span className="block h-full rounded-full bg-brand-primary" style={{ width: `${pct}%` }} />
             </span>
-            <span className="bar-value">{item.value}</span>
+            <span className="text-right font-medium tabular-nums">{item.value}</span>
           </div>
         );
       })}
@@ -165,13 +168,15 @@ function PlainTable({ rows }: { rows: string[][] }) {
   const shown = body.slice(0, MAX_TABLE_ROWS_SHOWN);
   const hidden = body.length - shown.length;
   return (
-    <div className="table-scroll">
-      <table>
+    <div className="my-2 max-h-80 overflow-auto rounded-md border">
+      <table className="w-full border-collapse text-xs">
         {header.length > 0 && (
           <thead>
             <tr>
               {header.map((cell, i) => (
-                <th key={i}>{cell}</th>
+                <th key={i} className="border bg-muted px-2 py-1 text-left whitespace-nowrap">
+                  {cell}
+                </th>
               ))}
             </tr>
           </thead>
@@ -180,34 +185,50 @@ function PlainTable({ rows }: { rows: string[][] }) {
           {shown.map((row, ri) => (
             <tr key={ri}>
               {row.map((cell, ci) => (
-                <td key={ci}>{cell}</td>
+                <td key={ci} className="border px-2 py-1 whitespace-nowrap">
+                  {cell}
+                </td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
-      {hidden > 0 && <div className="table-more">showing {shown.length} of {body.length} rows</div>}
+      {hidden > 0 && (
+        <div className="border-t px-2 py-1 text-xs text-muted-foreground">
+          showing {shown.length} of {body.length} rows
+        </div>
+      )}
     </div>
   );
 }
 
-/** Custom table renderer: 2-column numeric tables become CSS bars, others get the capped plain table. */
+/** Custom markdown renderers: tables → bars/plain, plus text styling. */
 const markdownComponents: Components = {
   table: ({ node }) => {
     const rows = tableRows(node);
     if (isBarTable(rows)) return <ComparisonBars rows={rows} />;
     return <PlainTable rows={rows} />;
   },
+  p: ({ children }) => <p className="my-1.5">{children}</p>,
+  h1: ({ children }) => <h1 className="mb-1.5 mt-2.5 text-sm font-semibold leading-tight">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-1.5 mt-2.5 text-sm font-semibold leading-tight">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-1.5 mt-2.5 text-sm font-semibold leading-tight">{children}</h3>,
+  ul: ({ children }) => <ul className="my-1.5 list-disc pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-1.5 list-decimal pl-5">{children}</ol>,
+  li: ({ children }) => <li className="my-0.5">{children}</li>,
+  code: ({ children }) => (
+    <code className="rounded border bg-muted px-1 py-px text-xs">{children}</code>
+  ),
 };
 
 export default function AnswerMarkdown({ text }: { text: string }) {
   const md = sanitizeAnswer(text);
   const { callout, rest } = extractCallout(md);
   return (
-    <div className="answer">
+    <div className="whitespace-normal text-sm">
       {callout && (
-        <div className="callout">
-          <span className="callout-value">{callout}</span>
+        <div className="my-2 rounded-md border-l-4 border-brand-primary bg-brand-primary/10 px-3.5 py-2.5">
+          <span className="block text-2xl font-extrabold leading-tight">{callout}</span>
         </div>
       )}
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
