@@ -37,6 +37,14 @@ const FALLBACKS: Record<Theme, Palette> = {
     surface: '#1a2029',
     series: ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a78bfa'],
   },
+  cyber: {
+    ink: '#c8c8d8',
+    muted: '#666680',
+    border: '#1a1a2e',
+    panel: '#0e0e1a',
+    surface: '#111122',
+    series: ['#00f0ff', '#ff00ff', '#00ff41', '#ff6600', '#ffdd00'],
+  },
 };
 
 const TOKENS: Array<[string, keyof Palette]> = [

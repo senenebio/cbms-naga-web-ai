@@ -6,7 +6,7 @@
  * The gear replaces the old standalone settings trigger (D6).
  */
 import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Moon, Settings, Sun, Zap } from 'lucide-react';
 import { Button } from './button';
 import {
   DropdownMenu,
@@ -26,6 +26,10 @@ export interface SettingsMenuProps {
   brandLicense: string;
   /** Opens the BYOK Connection dialog. */
   onConnection: () => void;
+  /** Current theme. */
+  theme?: 'light' | 'dark' | 'cyber';
+  /** Callback when theme changes. */
+  onThemeChange?: (theme: 'light' | 'dark' | 'cyber') => void;
 }
 
 const TEMP_KEY = 'chat-temperature';
@@ -69,6 +73,8 @@ export function SettingsMenu({
   brandVersion,
   brandLicense,
   onConnection,
+  theme = 'light',
+  onThemeChange,
 }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
 
@@ -103,6 +109,37 @@ export function SettingsMenu({
         <DropdownMenuItem onSelect={onConnection} className="cursor-pointer">
           Connection…
         </DropdownMenuItem>
+
+        {onThemeChange && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuItem
+              onSelect={() => onThemeChange('light')}
+              className="cursor-pointer"
+            >
+              <Sun className="mr-2 size-3.5" />
+              Light
+              {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => onThemeChange('dark')}
+              className="cursor-pointer"
+            >
+              <Moon className="mr-2 size-3.5" />
+              Dark
+              {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => onThemeChange('cyber')}
+              className="cursor-pointer"
+            >
+              <Zap className="mr-2 size-3.5" />
+              Cyber Night
+              {theme === 'cyber' && <span className="ml-auto text-xs">✓</span>}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

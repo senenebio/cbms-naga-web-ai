@@ -12,7 +12,7 @@
  * `deps` are injectable so the boot sequence can be tested in Node.
  */
 import { useEffect, useRef, useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
+
 import { Button } from '@workspace/ui/components/button';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import { ChatLayout } from '@workspace/ui/components/chat-layout.js';
@@ -92,14 +92,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
     saveTheme(theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setThemeState((t) => {
-      const next: Theme = t === 'dark' ? 'light' : 'dark';
-      saveTheme(next);
-      return next;
-    });
-  };
-
   const client: LLMClient | null =
     provider === 'init' || provider.status === 'unconfigured' ? null : provider.client;
 
@@ -134,22 +126,14 @@ export default function App({ deps = defaultDeps }: AppProps) {
       title={BRAND.name}
       status={modelLabel}
       headerRight={
-        <>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="inline-flex h-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <SettingsMenu
-            brandName={BRAND.name}
-            brandVersion={BRAND.version}
-            brandLicense={BRAND.license}
-            onConnection={() => setSettingsOpen(true)}
-          />
-        </>
+        <SettingsMenu
+          brandName={BRAND.name}
+          brandVersion={BRAND.version}
+          brandLicense={BRAND.license}
+          onConnection={() => setSettingsOpen(true)}
+          theme={theme}
+          onThemeChange={setThemeState}
+        />
       }
       composer={
         <Composer

@@ -7,7 +7,7 @@
  *   toggling the `.dark` class on `<html>` flips the whole UI (the
  *   shadcn/Tailwind dark-mode convention).
  */
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'cyber';
 
 const STORAGE_KEY = 'cbms-theme';
 
@@ -15,7 +15,7 @@ const STORAGE_KEY = 'cbms-theme';
 export function getInitialTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
+    if (stored === 'light' || stored === 'dark' || stored === 'cyber') return stored;
   } catch {
     /* SSR / privacy mode: no localStorage */
   }
@@ -29,10 +29,12 @@ export function getInitialTheme(): Theme {
   return 'light';
 }
 
-/** Applies the theme to <html> as the `.dark` class (shadcn dark mode). */
+/** Applies the theme to <html> as classes (shadcn dark mode + cyber variant). */
 export function applyTheme(theme: Theme): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle('dark', theme === 'dark');
+  const root = document.documentElement;
+  root.classList.toggle('dark', theme === 'dark' || theme === 'cyber');
+  root.classList.toggle('cyber', theme === 'cyber');
 }
 
 /** Persists the choice. */
