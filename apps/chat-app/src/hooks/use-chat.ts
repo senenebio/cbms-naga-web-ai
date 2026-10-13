@@ -42,7 +42,7 @@ export interface UseChatResult {
   newChat: () => void;
 }
 
-export function useChat({ engine, client, engineError }: UseChatOptions): UseChatResult {
+export function useChat({ engine, client }: UseChatOptions): UseChatResult {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [history, setHistory] = useState<Message[]>([]);
   const [busy, setBusy] = useState(false);

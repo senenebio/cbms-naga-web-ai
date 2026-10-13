@@ -28,10 +28,11 @@ import {
   type BarangayFeature,
 } from '@repo/map/geo.js';
 import { isRural } from '@repo/data.js';
+import { BRAND } from '../brand.js';
 import { resolvePalette } from './palette.js';
 import type { Theme } from '../theme.js';
 
-const GEO_URL = '/data/naga-barangays.geojson';
+const GEO_URL = `/data/${BRAND.dataset.id}/${BRAND.dataset.geojson}`;
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 /** Subtle stroke opacity so basemap shows through the borders (fill is adjustable). */
 const STROKE_OPACITY = 0.6;

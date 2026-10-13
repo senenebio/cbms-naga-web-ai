@@ -2,7 +2,7 @@
 /**
  * P1 T1.4 — map asset integrity (WASM).
  *
- * Loads the committed `data/naga-barangays.geojson` and the real warehouse
+ * Loads the committed `data/cbms/naga-barangays.geojson` and the real warehouse
  * via `openWarehouseWasm()`, then asserts:
  *   - the asset has exactly 27 features,
  *   - every asset `code` exists in the warehouse `barangay` view (⊆),
@@ -44,18 +44,18 @@ beforeAll(async () => {
   );
   await db.instantiate();
   wh = await openWarehouseWasm(db, {
-    person: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'person.parquet')),
-    household: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'household.parquet')),
-    barangay: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'barangay.parquet')),
+    person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
+    household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
+    barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
   });
   features = parseBarangayGeojson(
-    readFileSync(path.join(here, '..', 'data', 'naga-barangays.geojson'), 'utf8'),
+    readFileSync(path.join(here, '..', 'data', 'cbms', 'naga-barangays.geojson'), 'utf8'),
   );
   const r = await wh.engine.query('SELECT code, barangay FROM barangay ORDER BY code');
   warehouse = r.rows.map((row) => ({ code: String(row[0]), name: String(row[1]) }));
 }, 60_000);
 
-describe('map asset integrity (data/naga-barangays.geojson vs warehouse)', () => {
+describe('map asset integrity (data/cbms/naga-barangays.geojson vs warehouse)', () => {
   it('has exactly 27 features', () => {
     expect(features).toHaveLength(27);
   });

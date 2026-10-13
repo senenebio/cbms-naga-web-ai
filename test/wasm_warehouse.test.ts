@@ -3,7 +3,7 @@
  * Phase C gate — the WASM warehouse under Node/vitest.
  *
  * Instantiates duckdb-wasm (blocking Node build, main thread), loads the 3
- * real parquet files from `data/warehouse/` via `openWarehouseWasm()`, and
+ * real parquet files from `data/cbms/warehouse/` via `openWarehouseWasm()`, and
  * asserts the four views exist with the reference column sets and that
  * queries return correct `{ columns, rows }`.
  */
@@ -47,9 +47,9 @@ beforeAll(async () => {
   );
   await db.instantiate();
   wh = await openWarehouseWasm(db, {
-    person: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'person.parquet')),
-    household: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'household.parquet')),
-    barangay: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'barangay.parquet')),
+    person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
+    household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
+    barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
   });
   engine = wh.engine;
 }, 60_000);

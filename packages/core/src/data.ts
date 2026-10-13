@@ -2,25 +2,21 @@
  * Bundled data dictionary + PII allowlists (driver-free, importable by
  * the browser bundle).
  *
- * The 2024 CBMS data dictionary is a **static JSON import** (spec decision 7),
- * so `loadDataDictionary()` is synchronous. The dictionary `include=true`
- * flag is the PII allowlist: ean/bsn/husn/hsn/coordinates/contact columns
- * are never exposed.
+ * The dictionary is owned by the brand's dataset descriptor
+ * (`@workspace/brand-config` — single dictionary owner, data-aware spec D3).
+ * `loadDataDictionary()` is a **temporary re-export** backed by
+ * `CBMS_DATASET` (data-aware spec Phase 1); core modules will receive the
+ * dictionary via a `Dataset` parameter in Phase 2.
+ *
+ * The dictionary `include=true` flag is the PII allowlist: ean/bsn/husn/hsn/
+ * coordinates/contact columns are never exposed.
  */
-import dictionaryJson from '../../../data/2024-CBMS-Data-Dictionary.json';
+import { CBMS_DATASET, type DictEntry } from '@workspace/brand-config';
 
-export interface DictEntry {
-  variable_name: string;
-  data_type: string;
-  type: string;
-  input_data: string;
-  label: string;
-  include: boolean;
-  valueset?: { value: unknown; label: string }[];
-}
+export type { DictEntry };
 
 export function loadDataDictionary(): DictEntry[] {
-  const d = dictionaryJson as DictEntry[];
+  const d = CBMS_DATASET.dictionary;
   if (!Array.isArray(d) || d.length === 0) {
     throw new Error('Bundled data dictionary is empty or malformed');
   }

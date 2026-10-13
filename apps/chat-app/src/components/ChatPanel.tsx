@@ -49,7 +49,7 @@ export interface ChatPanelProps {
 
 export default function ChatPanel({
   messages,
-  busy,
+  busy: _busy,
   engine,
   engineError = null,
   client,
@@ -78,8 +78,6 @@ export default function ChatPanel({
     if (!el || !nearBottomRef.current) return;
     el.scrollTop = el.scrollHeight;
   }, [messages]);
-
-  const ready = engine !== null && !engineError;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

@@ -2,6 +2,7 @@
  * CBMS Naga 2024 — brand #1 of the white-label chat platform.
  */
 import type { Brand } from '../types.js';
+import { CBMS_DATASET } from '../datasets/cbms.js';
 
 export const CBMS: Brand = {
   id: 'cbms',
@@ -14,6 +15,7 @@ export const CBMS: Brand = {
     primary: '#1a3f8a',
     primaryForeground: '#ffffff',
   },
+  dataset: CBMS_DATASET,
 };
 
 export const BRANDS = { cbms: CBMS } as const;

@@ -19,27 +19,15 @@
  * core (`src/data.ts`, phase B); the copies here are byte-for-byte the
  * reference values and must stay in sync.
  */
-import dictionaryJson from '../../../../data/2024-CBMS-Data-Dictionary.json';
+import { loadDataDictionary } from '../data.js';
 import { WasmSqlEngine, type WasmConnection } from './wasm_engine.js';
 
 export type TableName = 'person' | 'household' | 'barangay';
 
 export const TABLES: readonly TableName[] = ['person', 'household', 'barangay'];
 
-/** An entry of the 2024-CBMS-Data-Dictionary.json file. */
-interface DictEntry {
-  variable_name: string;
-  data_type: string;
-  type: string;
-  input_data: string;
-  label: string;
-  include: boolean;
-}
-
-const dictionary = dictionaryJson as DictEntry[];
-
 const dictInclude = new Map<string, boolean>();
-for (const entry of dictionary) {
+for (const entry of loadDataDictionary()) {
   dictInclude.set(entry.variable_name, entry.include);
 }
 

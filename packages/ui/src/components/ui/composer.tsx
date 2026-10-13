@@ -34,7 +34,7 @@ export function Composer({
   placeholder = 'Ask a question…',
   submitLabel = 'Send',
 }: ComposerProps) {
-  const { ref, style, reset } = useAutoResize();
+  const { ref, style } = useAutoResize();
   const needsReset = useRef(false);
 
   const handleKeyDown = useCallback(

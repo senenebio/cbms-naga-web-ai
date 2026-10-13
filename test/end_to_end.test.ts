@@ -53,9 +53,9 @@ beforeAll(async () => {
   );
   await db.instantiate();
   wh = await openWarehouseWasm(db, {
-    person: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'person.parquet')),
-    household: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'household.parquet')),
-    barangay: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'barangay.parquet')),
+    person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
+    household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
+    barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
   });
   engine = wh.engine;
 
