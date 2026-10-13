@@ -5,6 +5,11 @@ import { defineConfig } from 'vitest/config';
 const rootDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
+  // Mirror of the `__DATA_VERSION__` define in `apps/chat-app/vite.config.ts`
+  // (app tests import modules that reference it; a static value is fine in tests).
+  define: {
+    __DATA_VERSION__: JSON.stringify('test'),
+  },
   resolve: {
     alias: {
       '@repo': join(rootDir, 'packages/core/src'),

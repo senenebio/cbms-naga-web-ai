@@ -80,8 +80,8 @@ app and root `packages/core/` unit tests.
 - `brand.ts` — unchanged import; `BRAND` now carries the dataset.
 - `core/chat.ts` — `createChatSession(engine, dataset)`; the session object
   carries the dataset so `chatQuestion` stays as-is.
-- Worker boot — fetch `/data/<id>/{person,household,barangay}.parquet` from
-  `BRAND.dataset.tables`; pass the dataset to `openWarehouseWasm`.
+- Worker boot — fetch `/data/<id>/warehouse/{person,household,barangay}.parquet`
+  from `BRAND.dataset.tables`; pass the dataset to `openWarehouseWasm`.
 - Map — geojson fetch path from `dataset.geojson`.
 - `demoQuestions.ts` — deleted; chips render from `BRAND.dataset.demoQuestions`.
 
