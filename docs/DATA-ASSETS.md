@@ -50,13 +50,16 @@ the generated copy.
 
 ## Deployment (Vercel)
 
-One Vercel project per brand, all from this repo (see `vercel.json`):
+One Vercel **project per brand**, all importing this same repo (a
+`vercel.json` cannot express a project matrix — per-brand config lives in
+each project's settings):
 
 | Setting | Value |
 |---|---|
-| Root Directory | *(repo root)* |
+| Root Directory | `apps/chat-app` |
 | Build Command | `pnpm build` |
 | Output Directory | `apps/chat-app/dist` |
+| Environment Variable | `VITE_BRAND_ID=<brand-id>` (per project) |
 
 The brand is selected per project via the `VITE_BRAND_ID` env var. The app
 is pure-static (no serverless, no runtime secrets — BYOK keys live in the

@@ -9,7 +9,7 @@
 Make a `Brand` **data-aware** (each brand carries its dataset descriptor) and
 establish a **deployment pipeline** (Vercel, one project per brand) so that
 adding a white-label brand with *different data* is a data + descriptor change,
-not a code change — and deploying it is a `vercel.json` entry, not a new repo.
+not a code change — and deploying it is a Vercel project entry, not a new repo.
 
 Brand #1 (CBMS Naga 2024) keeps byte-identical behavior throughout.
 
@@ -142,68 +142,52 @@ script.
 
 ### B2 — Separate deployment per additional brand
 
-**Vercel Project Matrix**: one repo, multiple named projects, each with its
-own build, subdomain, and env vars.
+**One Vercel project per brand**, all importing this same repo. A
+`vercel.json` cannot express a project matrix (its schema has no
+`projects` property) — per-brand config lives in each project's
+dashboard settings.
 
 #### Prerequisite (small code change)
 
-`apps/chat-app/src/brand.ts` currently hardcodes `BRANDS.cbms`. Make it
-env-driven:
+`apps/chat-app/src/brand.ts` is env-driven:
 
 ```ts
 const id = (import.meta.env.VITE_BRAND_ID ?? 'cbms') as BrandId;
 export const BRAND = BRANDS[id] ?? BRANDS.cbms;
 ```
 
-Each Vercel project sets `VITE_BRAND_ID` — Vite inlines it at build time, so
-the brand is baked into that deployment (build-time pairing, D1).
+Each Vercel project sets `VITE_BRAND_ID` as an **environment variable in
+its project settings** — Vite inlines it at build time, so the brand is
+baked into that deployment (build-time pairing, D1).
 
-#### `vercel.json` (one project per deployed brand)
+#### Per-project settings (Vercel dashboard)
 
-```json
-{
-  "projects": [
-    {
-      "name": "cbms-naga",
-      "rootDirectory": ".",
-      "buildCommand": "pnpm build",
-      "outputDirectory": "apps/chat-app/dist",
-      "env": { "VITE_BRAND_ID": "cbms" }
-    }
-  ]
-}
-```
+| Setting | Value |
+|---|---|
+| Root Directory | `apps/chat-app` |
+| Build Command | `pnpm build` |
+| Output Directory | `apps/chat-app/dist` |
+| Environment Variable | `VITE_BRAND_ID=<brand-id>` |
 
-Per brand you get: its own deployment + subdomain/custom domain, its own env
-vars, its own preview deploys per PR.
+Per brand you get: its own deployment + subdomain/custom domain, its own
+env vars, its own preview deploys per PR.
 
 #### Deploy only one brand, leave the others alone
 
-- **Vercel only deploys what is configured as a project.** A brand in the
-  repo (`BRANDS` entry + `data/<id>/`) with no project entry is inert.
-- **Add a brand to `vercel.json` only when you want it live.**
+- **Vercel only deploys what is imported as a project.** A brand in the
+  repo (`BRANDS` entry + `data/<id>/`) with no Vercel project is inert.
+- **Create a Vercel project for a brand only when you want it live.**
 - **Ships only its own data:** `scripts/copy-data.mjs` filters to the active
-  brand:
-
-  ```mjs
-  const brandId = process.env.BRAND_ID ?? 'cbms';
-  // copy only data/<brandId>/ → public/data/<brandId>/
-  ```
-
-  with `BRAND_ID` set alongside `VITE_BRAND_ID` (per-project env in
-  `vercel.json`; local `.env` for dev). Each deployment contains exactly one
-  brand's assets.
-
-- **Note:** Project Matrix rebuilds *all* configured projects on every push
-  to the default branch. Pausing a deployment = removing its project entry.
+  brand via the `BRAND_ID` env var (set alongside `VITE_BRAND_ID` in the
+  project settings). Each deployment contains exactly one brand's assets.
 
 ### Brand state model
 
-| Brand | In repo | Has `data/<id>/` | In `vercel.json` | Deployed |
+| Brand | In repo | Has `data/<id>/` | Has a Vercel project | Deployed |
 |---|---|---|---|---|
 | cbms | ✅ | ✅ | ✅ | ✅ |
 | future brand | ✅ | ✅ | ❌ | ❌ (inert) |
-| future brand, later | ✅ | ✅ | ✅ (added) | ✅ |
+| future brand, later | ✅ | ✅ | ✅ (created) | ✅ |
 
 ---
 
@@ -234,14 +218,14 @@ vars, its own preview deploys per PR.
 
 **Phase 4 — Brand env + deployment**
 7. `brand.ts` → env-driven (`VITE_BRAND_ID`).
-8. `vercel.json` with CBMS project entry.
+8. Per-brand Vercel project config (`VITE_BRAND_ID` env var per project).
 9. `copy-data.mjs` → `BRAND_ID` filter (ship only active brand's data).
    *Gate: local `pnpm build` green; Vercel import + live URL verified.*
 
 **Phase 5 — Docs**
 10. `AGENTS.md` + `README.md` + `docs/DATA-ASSETS.md`: per-brand data layout,
     the "add a brand" checklist (BRANDS entry + `data/<id>/` + one line in
-    `brand.ts` + `vercel.json` project entry), deployment instructions.
+    `brand.ts` + per-brand Vercel project entry), deployment instructions.
 
 ---
 

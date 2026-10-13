@@ -63,8 +63,9 @@ pnpm start    # build + serve locally for a quick check
 
 Drop the `dist/` folder on any static host:
 
-- **Vercel** — one project per brand (see `vercel.json`): Root: *repo root*,
+- **Vercel** — one project per brand, all from this repo: Root: `apps/chat-app`,
   Build: `pnpm build`, Output: `apps/chat-app/dist`, env `VITE_BRAND_ID=cbms`
+  (set per project in the Vercel dashboard)
 - **GitHub Pages** — set Vite `base` to your repo path
 
 ## Development
