@@ -32,7 +32,7 @@ describe('ChatPanel (presentational feed)', () => {
 
   it('renders the toolbar with Show SQL and New chat', () => {
     renderPanel();
-    expect(screen.getByRole('button', { name: 'Show SQL' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Show SQL' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument();
   });
 

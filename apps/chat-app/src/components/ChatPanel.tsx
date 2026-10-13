@@ -76,8 +76,8 @@ export default function ChatPanel({
   const [showSql, setShowSql] = useState(readShowSql);
   const messagesEl = useRef<HTMLDivElement>(null);
 
-  const toggleShowSql = () => {
-    const next = !showSql;
+  const toggleShowSql = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
     setShowSql(next);
     persistShowSql(next);
   };
@@ -99,19 +99,15 @@ export default function ChatPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Toolbar */}
       <div className="flex items-center gap-2 pb-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          className="ml-auto"
-          aria-pressed={showSql}
-          title={
-            showSql ? 'Hide the SQL and raw-rows sections' : 'Show the SQL and raw-rows sections'
-          }
-          onClick={toggleShowSql}
-        >
+        <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={showSql}
+            onChange={toggleShowSql}
+            className="size-3.5"
+          />
           Show SQL
-        </Button>
+        </label>
         <Button
           type="button"
           variant="outline"
