@@ -6,14 +6,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getInitialTheme, applyTheme, saveTheme } from './theme';
 
 function makeElement() {
-  const attributes = new Map<string, string>();
+  const classes = new Set<string>();
   return {
-    attributes,
-    setAttribute(name: string, value: string) {
-      attributes.set(name, value);
-    },
-    getAttribute(name: string) {
-      return attributes.get(name) ?? null;
+    classList: {
+      toggle(name: string, force?: boolean) {
+        if (force === true || force === undefined) classes.add(name);
+        else classes.delete(name);
+        return classes.has(name);
+      },
+      contains: (name: string) => classes.has(name),
+      clear: () => classes.clear(),
     },
   };
 }
@@ -28,7 +30,7 @@ describe('theme', () => {
     getItem = vi.fn();
     setItem = vi.fn();
     removeItem = vi.fn();
-    htmlElement.attributes.clear();
+    htmlElement.classList.clear();
     vi.stubGlobal('localStorage', { getItem, setItem, removeItem });
     vi.stubGlobal('document', { documentElement: htmlElement });
   });
@@ -59,9 +61,11 @@ describe('theme', () => {
     expect(getInitialTheme()).toBe('light');
   });
 
-  it('applyTheme sets data-theme on <html>', () => {
+  it('applyTheme toggles the .dark class on <html>', () => {
     applyTheme('dark');
-    expect(htmlElement.attributes.get('data-theme')).toBe('dark');
+    expect(htmlElement.classList.contains('dark')).toBe(true);
+    applyTheme('light');
+    expect(htmlElement.classList.contains('dark')).toBe(false);
   });
 
   it('saveTheme writes to localStorage', () => {

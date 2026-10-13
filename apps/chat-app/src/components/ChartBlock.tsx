@@ -17,7 +17,7 @@ import type { Palette } from './ChartRenderer.js';
 
 const ChartRenderer = lazy(() => import('./ChartRenderer.js'));
 
-/** Mirrors the `:root` / `[data-theme='dark']` custom properties in styles.css. */
+/** Mirrors the `:root` / `.dark` custom properties in styles.css. */
 const PALETTES: Record<Theme, Palette> = {
   light: { ink: '#1f2430', muted: '#6b7280', border: '#e2e5ea', panel: '#ffffff', surface: '#fbfcfe' },
   dark: { ink: '#e8ecf2', muted: '#9aa3b2', border: '#2a3140', panel: '#171c24', surface: '#1a2029' },

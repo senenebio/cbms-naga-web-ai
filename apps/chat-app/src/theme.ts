@@ -4,7 +4,8 @@
  * - Choice persisted in localStorage under `cbms-theme`.
  * - First visit follows the system `prefers-color-scheme`.
  * - All component colors read CSS custom properties (see `styles.css`), so
- *   setting `data-theme` on `<html>` flips the whole UI.
+ *   toggling the `.dark` class on `<html>` flips the whole UI (the
+ *   shadcn/Tailwind dark-mode convention).
  */
 export type Theme = 'light' | 'dark';
 
@@ -28,10 +29,10 @@ export function getInitialTheme(): Theme {
   return 'light';
 }
 
-/** Applies the theme to <html> via the `data-theme` attribute. */
+/** Applies the theme to <html> as the `.dark` class (shadcn dark mode). */
 export function applyTheme(theme: Theme): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
 }
 
 /** Persists the choice. */

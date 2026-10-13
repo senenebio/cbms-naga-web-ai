@@ -2,7 +2,7 @@
  * Phase F — shared styles (chat + settings only). Ported from the reference
  * UI, trimmed to the chat/settings surface. Every color lives in a CSS
  * custom property; the light palette is the `:root` default and
- * `[data-theme="dark"]` swaps all of them (see theme.ts).
+ * `.dark` on `<html>` swaps all of them (see theme.ts).
  */
 :root {
   /* light theme */
@@ -24,7 +24,7 @@
   --chip: #f8fafc;
   --track: #e9edf3;
 }
-[data-theme='dark'] {
+.dark {
   /* dark theme */
   --bg: #0f1218;
   --panel: #171c24;

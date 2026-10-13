@@ -47,7 +47,7 @@ function loadGeo(): Promise<string> {
   return geoPromise;
 }
 
-/** Mirrors the `:root` / `[data-theme='dark']` custom properties in styles.css. */
+/** Mirrors the `:root` / `.dark` custom properties in styles.css. */
 interface MapPalette {
   ink: string;
   muted: string;
