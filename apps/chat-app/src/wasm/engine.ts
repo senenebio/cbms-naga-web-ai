@@ -17,7 +17,7 @@ export interface BrowserWarehouseHandle {
   close(): Promise<void>;
 }
 
-const DATA_BASE = '/data';
+const DATA_BASE = `/data/${(import.meta.env.VITE_BRAND_ID ?? 'cbms')}`;
 
 /**
  * A `SqlEngine` backed by the duckdb-wasm Web Worker: queries are posted

@@ -6,6 +6,7 @@
  * unconfigured-client path.
  */
 import { describe, expect, it } from 'vitest';
+import { BRAND } from '../brand.js';
 import { chatQuestion, createChatSession } from './chat.js';
 import type { LLMClient, Message, SqlEngine, ToolCall } from '@repo/llm/types.js';
 import { UNCONFIGURED_MESSAGE } from '@repo/llm/provider.js';
@@ -50,7 +51,7 @@ async function collect(gen: AsyncGenerator<ChatEvent>): Promise<ChatEvent[]> {
 
 describe('core/chat.ts (stub engine + stub LLM)', () => {
   it('streams sql/rows/token/done events for a tool-calling turn', async () => {
-    const session = await createChatSession(stubEngine);
+    const session = await createChatSession(stubEngine, BRAND.dataset);
     const llm = new StubLlm();
     const events = await collect(
       chatQuestion({
@@ -91,7 +92,7 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
   });
 
   it('sends the warehouse schema in the system prompt and the run_select tool spec', async () => {
-    const session = await createChatSession(stubEngine);
+    const session = await createChatSession(stubEngine, BRAND.dataset);
     const llm = new StubLlm();
     await collect(
       chatQuestion({
@@ -111,7 +112,7 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
   });
 
   it('yields a single friendly error event when no LLM is configured', async () => {
-    const session = await createChatSession(stubEngine);
+    const session = await createChatSession(stubEngine, BRAND.dataset);
     const events = await collect(
       chatQuestion({ session, client: null, history: [], question: 'Hello?' }),
     );
@@ -119,7 +120,7 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
   });
 
   it('yields a chart event for a make_chart call (before the answer text)', async () => {
-    const session = await createChatSession(stubEngine);
+    const session = await createChatSession(stubEngine, BRAND.dataset);
     const client: LLMClient = {
       async chat(messages: Message[], _tools: unknown[]) {
         const prior = messages.filter((m) => m.role === 'tool').length;

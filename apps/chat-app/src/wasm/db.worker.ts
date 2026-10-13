@@ -10,6 +10,7 @@
  * After that it only answers `query`/`close` round-trips (see
  * `protocol.ts`) — the main thread never sees the duckdb connection.
  */
+import { BRAND } from '../brand.js';
 import { AsyncDuckDB, ConsoleLogger } from '@duckdb/duckdb-wasm';
 import duckdbDispatcherWorkerUrl from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 import duckdbWasmUrl from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
@@ -32,7 +33,7 @@ async function bootWarehouse(parquets: Record<TableName, ArrayBuffer>): Promise<
   try {
     await db.instantiate(duckdbWasmUrl);
     await db.open({});
-    return await openWarehouseWasm(db, parquets);
+    return await openWarehouseWasm(db, parquets, BRAND.dataset);
   } catch (e) {
     dispatcher.terminate();
     throw e;

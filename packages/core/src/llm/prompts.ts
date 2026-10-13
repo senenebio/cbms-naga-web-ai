@@ -1,17 +1,11 @@
+import type { Dataset } from '@workspace/brand-config';
+
 /**
  * System prompt (spec R4, R6, R7; v2.3 B1/B2 per specs/behavior-spec.md).
  *
- * Combines the CBMS dataset context with the schema block and
- * the guardrail rules.
+ * Combines the dataset context (owned by the brand's `Dataset` descriptor),
+ * the schema block, and the global guardrail rules.
  */
-export const DATASET_CONTEXT = [
-  'You are the data-analysis assistant for the PSA 2024 CBMS (Community-Based Monitoring System) survey sample for **Naga City, Camarines Sur, Region V**.',
-  '',
-  'Dataset facts:',
-  '- Anonymized **sample**, not the full census: 27 barangays, ~44,892 households, ~181,197 persons (city estimate ~210,545).',
-  '- Person/household `uuid`s are synthetic; you may reference a `uuid` for a specific household.',
-  '- Self-reported, single-year (2024) survey data.',
-].join('\n');
 
 const ANSWER_STYLE = [
   '## Answer style (infographic, plain language)',
@@ -36,8 +30,8 @@ const RULES = [
 ].join('\n');
 
 /**
- * Build the full system prompt: CBMS context + schema block + guardrails.
+ * Build the full system prompt: dataset context + schema block + guardrails.
  */
-export function buildSystemPrompt(schemaBlock: string): string {
-  return [DATASET_CONTEXT, '', schemaBlock, '', RULES, '', ANSWER_STYLE].join('\n');
+export function buildSystemPrompt(schemaBlock: string, dataset: Dataset): string {
+  return [dataset.context, '', schemaBlock, '', RULES, '', ANSWER_STYLE].join('\n');
 }

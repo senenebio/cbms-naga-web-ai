@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'web/dist/', 'node_modules/', 'data/'],
+    ignores: ['dist/', 'apps/chat-app/dist/', 'node_modules/', 'data/'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

@@ -3,7 +3,7 @@
  * Phase C gate — the WASM warehouse under Node/vitest.
  *
  * Instantiates duckdb-wasm (blocking Node build, main thread), loads the 3
- * real parquet files from `data/warehouse/` via `openWarehouseWasm()`, and
+ * real parquet files from `data/cbms/warehouse/` via `openWarehouseWasm()`, and
  * asserts the four views exist with the reference column sets and that
  * queries return correct `{ columns, rows }`.
  */
@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
+import { CBMS_DATASET } from '@workspace/brand-config';
 import { openWarehouseWasm, TABLES, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
 import type { SqlEngine } from '@repo/llm/types.js';
 
@@ -47,10 +48,10 @@ beforeAll(async () => {
   );
   await db.instantiate();
   wh = await openWarehouseWasm(db, {
-    person: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'person.parquet')),
-    household: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'household.parquet')),
-    barangay: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'barangay.parquet')),
-  });
+    person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
+    household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
+    barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
+  }, CBMS_DATASET);
   engine = wh.engine;
 }, 60_000);
 

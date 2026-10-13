@@ -50,7 +50,8 @@ Three parquet files covering the **2024 CBMS survey for Naga City**:
 - `barangay` — the 27 barangays with aggregates
 
 A data dictionary controls which columns are visible (PII like names, IDs,
-and coordinates are blocked). The full schema is described in
+and coordinates are blocked). Data assets live per-brand under
+`data/cbms/` — the full schema and the add-a-brand checklist are in
 [`docs/DATA-ASSETS.md`](docs/DATA-ASSETS.md).
 
 ## Building & deploying
@@ -62,7 +63,9 @@ pnpm start    # build + serve locally for a quick check
 
 Drop the `dist/` folder on any static host:
 
-- **Vercel** — Framework: *Other*, Root: `apps/chat-app`, Build: `pnpm build`
+- **Vercel** — one project per brand, all from this repo: Root: `apps/chat-app`,
+  Build: `pnpm build`, Output: `apps/chat-app/dist`, env `VITE_BRAND_ID=cbms`
+  (set per project in the Vercel dashboard)
 - **GitHub Pages** — set Vite `base` to your repo path
 
 ## Development
@@ -79,9 +82,9 @@ pnpm lint        # ESLint
 ```
 apps/chat-app/            # the React app you see in the browser
 packages/ui/              # shared UI (Tailwind globals, shadcn components)
-packages/brand-config/    # brand identity (name, colors, welcome text)
+packages/brand-config/    # brand identity + dataset descriptors
 src/                      # driver-free core: LLM client, SQL guardrails, map logic
-data/                     # the actual parquet files + data dictionary
+data/<brand-id>/          # per-brand parquet files + data dictionary + geojson
 specs/                    # feature specs
 docs/                     # guardrails & data docs
 ```

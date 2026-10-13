@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
+import { CBMS_DATASET } from '@workspace/brand-config';
 import { openWarehouseWasm, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
 import type { Message, SqlEngine } from '@repo/llm/types.js';
 import { askQuestion, type AskOutcome } from '@repo/llm/client.js';
@@ -53,15 +54,15 @@ beforeAll(async () => {
   );
   await db.instantiate();
   wh = await openWarehouseWasm(db, {
-    person: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'person.parquet')),
-    household: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'household.parquet')),
-    barangay: toArrayBuffer(path.join(here, '..', 'data', 'warehouse', 'barangay.parquet')),
-  });
+    person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
+    household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
+    barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
+  }, CBMS_DATASET);
   engine = wh.engine;
 
   // Warm the full schema block (C7 fallback) and build the system prompt.
-  const fullSystem = buildSystemPrompt(await buildSchemaBlock(engine));
-  system = await systemForQuestion(QUESTION, fullSystem, engine);
+  const fullSystem = buildSystemPrompt(await buildSchemaBlock(engine, CBMS_DATASET), CBMS_DATASET);
+  system = await systemForQuestion(QUESTION, fullSystem, engine, CBMS_DATASET);
 }, 60_000);
 
 afterAll(async () => {

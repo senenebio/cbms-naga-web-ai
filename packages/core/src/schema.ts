@@ -12,8 +12,9 @@
  * connections. `tableFacts` / `observedColumnValues` query the warehouse
  * views directly.
  */
+import type { Dataset } from '@workspace/brand-config';
 import type { SqlEngine } from './llm/types.js';
-import { loadDataDictionary, allowedColumns, type DictEntry } from './data.js';
+import { allowedColumns } from './data.js';
 
 export type SchemaTable = 'household' | 'person';
 
@@ -45,8 +46,9 @@ export async function observedColumnValues(
   engine: SqlEngine,
   table: SchemaTable,
   columns: string[],
+  dataset: Dataset,
 ): Promise<Map<string, Set<string>>> {
-  const dict = loadDataDictionary() as DictEntry[];
+  const dict = dataset.dictionary;
   const coded = columns.filter((c) =>
     dict.some(
       (e) => e.include === true && e.variable_name === c && e.valueset && e.valueset.length > 0,
@@ -116,13 +118,14 @@ function conventionFor(valueset: { value: unknown; label: string }[]): string | 
 function tableLines(
   table: SchemaTable,
   columns: string[],
+  dataset: Dataset,
   observed?: Map<string, Set<string>> | undefined,
   selected?: Set<string> | undefined,
 ): SchemaLine[] {
-  const allowed = new Set(allowedColumns(table, columns));
+  const allowed = new Set(allowedColumns(table, columns, dataset));
   const seen = new Set<string>();
   const lines: SchemaLine[] = [];
-  for (const e of loadDataDictionary() as DictEntry[]) {
+  for (const e of dataset.dictionary) {
     if (e.include !== true || !allowed.has(e.variable_name)) continue;
     if (selected && !selected.has(e.variable_name)) continue;
     // The dictionary covers household+person sections; keep one line per
@@ -201,7 +204,7 @@ export function resetSchemaCache(): void {
  * A column matches when at least 2 distinct question tokens (lowercased,
  * ≥3 chars, stopwords removed) appear in its label or variable name.
  */
-export function selectColumns(question: string): Set<string> | null {
+export function selectColumns(question: string, dataset: Dataset): Set<string> | null {
   const tokens = new Set<string>(
     (question.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
       (t) => t.length >= 3 && !SCOPING_STOPWORDS.has(t),
@@ -209,7 +212,7 @@ export function selectColumns(question: string): Set<string> | null {
   );
   if (tokens.size === 0) return null;
   const selected = new Set<string>();
-  for (const e of loadDataDictionary() as DictEntry[]) {
+  for (const e of dataset.dictionary) {
     if (e.include !== true) continue;
     const text = `${e.label ?? ''} ${e.variable_name}`.toLowerCase();
     let score = 0;
@@ -298,7 +301,11 @@ const SCOPING_STOPWORDS = new Set([
  * computed once, then the same string is returned without re-querying.
  * When `selected` is omitted, the FULL schema block is built (C7 fallback).
  */
-export async function buildSchemaBlock(engine: SqlEngine, selected?: Set<string>): Promise<string> {
+export async function buildSchemaBlock(
+  engine: SqlEngine,
+  dataset: Dataset,
+  selected?: Set<string>,
+): Promise<string> {
   const key = selected ? [...selected].sort().join('\n') : 'full';
   const cached = schemaBlockCache.get(key);
   if (cached) return cached;
@@ -308,8 +315,8 @@ export async function buildSchemaBlock(engine: SqlEngine, selected?: Set<string>
       tableFacts(engine, 'person'),
     ]);
     const [householdObserved, personObserved] = await Promise.all([
-      observedColumnValues(engine, 'household', household.columns),
-      observedColumnValues(engine, 'person', person.columns),
+      observedColumnValues(engine, 'household', household.columns, dataset),
+      observedColumnValues(engine, 'person', person.columns, dataset),
     ]);
 
     const parts: string[] = [];
@@ -324,7 +331,7 @@ export async function buildSchemaBlock(engine: SqlEngine, selected?: Set<string>
     parts.push(
       renderTableBlock(
         'household',
-        tableLines('household', household.columns, householdObserved, selected),
+        tableLines('household', household.columns, dataset, householdObserved, selected),
         household.count,
       ),
     );
@@ -346,7 +353,7 @@ export async function buildSchemaBlock(engine: SqlEngine, selected?: Set<string>
     parts.push(
       renderTableBlock(
         'person',
-        tableLines('person', person.columns, personObserved, selected),
+        tableLines('person', person.columns, dataset, personObserved, selected),
         person.count,
       ),
     );
