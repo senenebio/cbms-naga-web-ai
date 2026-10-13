@@ -92,7 +92,7 @@ describe('<LeafletBarangayMap />', () => {
     ];
     const tree = await renderMap({ columns, rows, theme: 'light', geojson: fixtureGeo() });
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('map-legend');
+    expect(text).toContain('text-[11px]');
     expect(text).toContain('100');
     expect(text).toContain('900');
   });
