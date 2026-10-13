@@ -1,116 +1,99 @@
-# CBMS Naga City — White-Label AI Chat
+# CBMS Naga City — AI Chat
 
-A **pure-static, browser-only** white-label chat platform. Brand #1: **2024 CBMS
-(Community-Based Monitoring System) — Naga City**. DuckDB runs entirely in the
-browser via [`duckdb-wasm`](https://duckdb.org) (in a Web Worker) over three
-bundled parquet files, and a BYOK / local LLM is called **directly from the
-browser** with tool (function) calling to run **read-only SQL**. There is **no
-runtime server** — the app is a static bundle you can host anywhere.
+Ask questions about Naga City's 2024 community data in plain language.
+The app runs a database (DuckDB) **in your browser**, connects it to an LLM
+that you configure yourself (BYOK), and answers with text, charts, tables,
+and maps.
 
-Built on **React 19 + Vite + Tailwind CSS v4 + shadcn/ui** in a **pnpm
-workspace monorepo**.
+No server. No signup. Your API key stays in your browser.
 
-## What it does
+---
 
-- A single **chat panel** with a minimal composer — no workspace pane.
-- The LLM is given the warehouse schema and a `run_select` tool. It writes
-  `SELECT` queries, the app runs them against in-browser DuckDB, returns the
-  (capped) rows, and the LLM narrates the answer in Markdown with charts,
-  tables, and maps.
-- **Case-insensitive + fuzzy name matching**: the LLM uses `UPPER()` / `LIKE`
-  for name columns, and a 0-row retry catches typos automatically.
-- **Interactive charts** (bar, line, area, pie, scatter) rendered inline.
-- **Barangay choropleth map** — when results include a `code`/`barangay`
-  column plus a numeric metric, a Leaflet map renders automatically.
-- **BYOK settings** — OpenAI-compatible endpoints (local Ollama, OpenRouter,
-  OpenAI, etc.) stored in `localStorage` only.
-
-## Data source
-
-- **2024 CBMS — Naga City**, pre-built into three warehouse parquets under
-  `data/warehouse/`: `person`, `household`, `barangay`.
-- A **data dictionary** (`data/2024-CBMS-Data-Dictionary.json`) drives the PII
-  allowlist. Warehouse views: `barangay`, `household`, `person`,
-  `v_barangay_summary`.
-
-## Run it
+## Quick start
 
 ```bash
 pnpm install
-```
-
-### Development
-
-```bash
 pnpm dev
 ```
 
-### Production (static)
+Open the printed URL, click the **⚙️ gear** → **Connection…**, enter your
+API key and endpoint, and start chatting.
+
+Supported providers (any OpenAI-compatible endpoint):
+
+| Provider    | Example endpoint                  |
+| ----------- | --------------------------------- |
+| Ollama (local) | `http://localhost:11434/v1`   |
+| LM Studio   | `http://localhost:1234/v1`       |
+| OpenRouter  | `https://openrouter.ai/api/v1`   |
+| OpenAI      | `https://api.openai.com/v1`      |
+
+## What it does
+
+You type a question like *"Which barangays have the most households?"* and
+the LLM:
+
+1. Writes a SQL query against the warehouse
+2. Runs it against DuckDB in your browser
+3. Explains the results in plain English
+4. Renders charts / tables / a barangay map when it makes sense
+
+Name matching is **case-insensitive and fuzzy** — try "naga" or "PILAR" and
+it'll find the right rows.
+
+## The data
+
+Three parquet files covering the **2024 CBMS survey for Naga City**:
+
+- `person` — individual respondents
+- `household` — household-level records
+- `barangay` — the 27 barangays with aggregates
+
+A data dictionary controls which columns are visible (PII like names, IDs,
+and coordinates are blocked). The full schema is described in
+[`docs/DATA-ASSETS.md`](docs/DATA-ASSETS.md).
+
+## Building & deploying
 
 ```bash
-pnpm build      # copies data → apps/chat-app/public/data/ then builds
-pnpm start      # build + serve with vite preview
+pnpm build    # → apps/chat-app/dist/  (a plain static site)
+pnpm start    # build + serve locally for a quick check
 ```
 
-To deploy, publish the build output (`apps/chat-app/dist/`) to any static host.
+Drop the `dist/` folder on any static host:
 
-### Tests / checks
+- **Vercel** — Framework: *Other*, Root: `apps/chat-app`, Build: `pnpm build`
+- **GitHub Pages** — set Vite `base` to your repo path
+
+## Development
 
 ```bash
-pnpm test        # vitest: 205 tests (pure logic, WASM E2E, React components)
-pnpm typecheck   # tsc --noEmit
-pnpm lint        # eslint
-pnpm format      # prettier
+pnpm dev         # Vite dev server
+pnpm test        # 205 tests (vitest)
+pnpm typecheck   # TypeScript
+pnpm lint        # ESLint
 ```
 
-## Using it
-
-1. `pnpm dev` and open the URL it prints.
-2. Click the **⚙️ gear** → **Connection…** to configure a BYOK provider:
-   - **local** — Ollama / LM Studio / llama.cpp (any OpenAI-compatible endpoint)
-   - **openrouter** — `https://openrouter.ai/api/v1`
-   - **openai** — `https://api.openai.com/v1`
-3. Chat with the warehouse. The model issues read-only SQL and explains results.
-
-## Architecture
-
-- **DuckDB-WASM worker** — `apps/chat-app/src/wasm/db.worker.ts` owns the
-  `DuckDBWASM` engine in a Web Worker.
-- **Driver-free core** — `src/` (SQL guardrails, schema, LLM client, PII
-  allowlists) has no `node:` imports; imported by both the app and Node tests.
-- **BYOK LLM** — thin `fetch` LLMClient (no SDK). Keys in `localStorage` only.
-- **UI** — Tailwind v4 + shadcn/ui primitives in `packages/ui/`, chat layout
-  in `ChatLayout` + `Composer` + `SettingsMenu`.
-- **Brand system** — `packages/brand-config/` defines brand identity (name,
-  welcome text, colors, license). Build-time selection; CSS variables for
-  instant theme flips.
-
-### Guardrails (do not weaken)
-
-- **Read-only SQL**: single `SELECT` only, enforced by `validateSelectOnly`.
-- **Result caps**: 100-row cap, ~50 KB result-text cap.
-- **PII allowlist**: only data-dictionary `include=true` columns exposed.
-
-## Project layout
+## How it's put together
 
 ```
-apps/chat-app/            # React app (ChatLayout, Composer, SettingsMenu, feed)
-packages/ui/              # @workspace/ui: Tailwind globals, shadcn primitives
-packages/brand-config/    # @workspace/brand-config: brand types + CBMS brand #1
-src/                      # driver-free core (LLM, SQL, schema, map, wasm)
-data/                     # source assets (parquets, dictionary, GeoJSON)
+apps/chat-app/            # the React app you see in the browser
+packages/ui/              # shared UI (Tailwind globals, shadcn components)
+packages/brand-config/    # brand identity (name, colors, welcome text)
+src/                      # driver-free core: LLM client, SQL guardrails, map logic
+data/                     # the actual parquet files + data dictionary
 specs/                    # feature specs
-docs/                     # guardrails + data asset docs
+docs/                     # guardrails & data docs
 ```
 
-## Deployment
+- **DuckDB** runs in a Web Worker via `duckdb-wasm` (single-threaded, no
+  CORS headers needed).
+- **LLM calls** go straight from your browser to the provider — nothing
+  touches a server.
+- **SQL is read-only** — only `SELECT` is allowed, enforced by a keyword
+  blocklist. Results are capped at 100 rows.
+- **UI** is Tailwind CSS v4 + shadcn/ui. Dark mode is a class toggle.
 
-- **Vercel**: Framework "Other", Root Directory `apps/chat-app`, Build `pnpm build`
-- **GitHub Pages**: set Vite `base` to the repo path; `DATA_BASE` uses
-  `import.meta.env.BASE_URL`
+## License
 
-## Notes
-
-- Data assets under `apps/chat-app/public/data/` are **build-generated** and gitignored.
-- BYOK keys live in `localStorage` only — no server, no telemetry.
-- License: MIT
+MIT
