@@ -17,7 +17,9 @@ export interface BrowserWarehouseHandle {
   close(): Promise<void>;
 }
 
-const DATA_BASE = `/data/${(import.meta.env.VITE_BRAND_ID ?? 'cbms')}`;
+// Parquets live under `warehouse/` per the per-brand data layout
+// (`data/<brand-id>/warehouse/*.parquet`, spec D5).
+const DATA_BASE = `/data/${(import.meta.env.VITE_BRAND_ID ?? 'cbms')}/warehouse`;
 // Per-deploy version stamp: keeps each build's asset URLs cache-fresh so a
 // stale edge-cached 404 from an earlier deployment can't break this one.
 const DATA_VERSION = `?v=${__DATA_VERSION__}`;
