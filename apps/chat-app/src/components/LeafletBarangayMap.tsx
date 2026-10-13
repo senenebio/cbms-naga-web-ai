@@ -35,7 +35,7 @@ const isRural = (name: string): boolean =>
 import { resolvePalette } from './palette.js';
 import type { Theme } from '../theme.js';
 
-const GEO_URL = `/data/${BRAND.dataset.id}/${BRAND.dataset.geojson}`;
+const GEO_URL = `/data/${BRAND.dataset.id}/${BRAND.dataset.geojson}?v=${__DATA_VERSION__}`;
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 /** Subtle stroke opacity so basemap shows through the borders (fill is adjustable). */
 const STROKE_OPACITY = 0.6;

@@ -18,6 +18,9 @@ export interface BrowserWarehouseHandle {
 }
 
 const DATA_BASE = `/data/${(import.meta.env.VITE_BRAND_ID ?? 'cbms')}`;
+// Per-deploy version stamp: keeps each build's asset URLs cache-fresh so a
+// stale edge-cached 404 from an earlier deployment can't break this one.
+const DATA_VERSION = `?v=${__DATA_VERSION__}`;
 
 /**
  * A `SqlEngine` backed by the duckdb-wasm Web Worker: queries are posted
@@ -90,7 +93,7 @@ export async function openWarehouseBrowser(): Promise<BrowserWarehouseHandle> {
   const parquets: Record<TableName, ArrayBuffer> = {} as Record<TableName, ArrayBuffer>;
   await Promise.all(
     TABLES.map(async (table) => {
-      const res = await fetch(`${DATA_BASE}/${table}.parquet`);
+      const res = await fetch(`${DATA_BASE}/${table}.parquet${DATA_VERSION}`);
       if (!res.ok)
         throw new Error(`failed to fetch ${DATA_BASE}/${table}.parquet (HTTP ${res.status})`);
       parquets[table] = await res.arrayBuffer();

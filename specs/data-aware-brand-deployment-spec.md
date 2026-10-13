@@ -1,6 +1,6 @@
 # Spec: Data-Aware Brands + Deployment
 
-**Status:** implemented (Vercel live verification pending — needs a git remote)
+**Status:** implemented (Vercel live, verified 2026-10-13 — see B3 incident notes)
 **Date:** 2026-10-13
 **Parent spec:** `monorepo-whitelabel-spec.md` (complete)
 
@@ -132,6 +132,11 @@ script.
 3. **No env vars, no `vercel.json` required** for the single-brand case.
    `prebuild` runs `scripts/copy-data.mjs` inside `pnpm build`, so
    `public/data/` is populated and the parquets land in `dist/data/`.
+   The `copy-brand-data` Vite plugin (in `apps/chat-app/vite.config.ts`)
+   performs the same copy at `buildStart`, so the data is bundled even
+   when a build tool invokes `vite build` directly (skipping npm
+   lifecycle scripts). Brand filter: `BRAND_ID`, falling back to
+   `VITE_BRAND_ID`.
 4. **Verify on the live URL:**
    - Warehouse boots (parquets + duckdb wasm load)
    - BYOK endpoint configured in Settings → demo question runs
@@ -139,6 +144,28 @@ script.
    - Deploy size ~47 MB static
 
 **Optional:** custom domain, `{ "cleanUrls": true }` in `vercel.json`.
+
+### B3 — Data-URL versioning + incident notes (2026-10-13)
+
+**Mechanism: versioned data URLs.** Runtime-fetched assets (`/data/<id>/…`
+parquets + geojson) are fetched with a `?v=<build-stamp>` query string,
+injected at build time via `__DATA_VERSION__` (`define` in
+`apps/chat-app/vite.config.ts`; ambient decl in
+`apps/chat-app/src/globals.d.ts`). Every deploy therefore uses fresh
+edge-cache keys, so a stale edge-cached 404 from an earlier (broken)
+deployment can never break a healthy one.
+
+**Incident: failed builds + stale 404s.** The Vercel project was created
+with Root Directory `apps/chat-app` — `pnpm build` run from a directory
+with no `package.json` fails (`ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL`), so
+every build failed and Vercel kept serving the last (data-less)
+deployment while edge PoPs cached the resulting 404s (negative caches
+persisted well past the alias swap). Resolution: Root Directory cleared
+(repo root), Build Command `pnpm build`, Output `apps/chat-app/dist`;
+then B3 versioning so recovery didn't depend on edge-cache expiry.
+
+**Rule: Root Directory must be the repo root** (the `package.json` lives
+there). Never set it to `apps/chat-app`.
 
 ### B2 — Separate deployment per additional brand
 
@@ -164,10 +191,10 @@ baked into that deployment (build-time pairing, D1).
 
 | Setting | Value |
 |---|---|
-| Root Directory | `apps/chat-app` |
+| Root Directory | *(repo root, empty — see B3 rule)* |
 | Build Command | `pnpm build` |
 | Output Directory | `apps/chat-app/dist` |
-| Environment Variable | `VITE_BRAND_ID=<brand-id>` |
+| Environment Variables | `VITE_BRAND_ID=<brand-id>`, `BRAND_ID=<brand-id>` |
 
 Per brand you get: its own deployment + subdomain/custom domain, its own
 env vars, its own preview deploys per PR.
