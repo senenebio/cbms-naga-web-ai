@@ -11,7 +11,7 @@ import {
   saveStoredConfig,
   type KeyValueStorage,
 } from './provider.js';
-import { maskKey } from '../../../src/llm/provider.js';
+import { maskKey } from '@repo/llm/provider.js';
 
 function stubStorage(): KeyValueStorage {
   const store = new Map<string, string>();

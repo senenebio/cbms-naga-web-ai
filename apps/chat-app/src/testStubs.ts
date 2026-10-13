@@ -16,7 +16,7 @@ import type {
   SqlEngine,
   ToolCall,
   ToolSpec,
-} from '../../src/llm/types.js';
+} from '@repo/llm/types.js';
 
 export function stubEngine(
   rows: unknown[][] = [[1, 'TEST']],

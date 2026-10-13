@@ -33,7 +33,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { ChartType } from '../../../src/llm/chart.js';
+import type { ChartType } from '@repo/llm/chart.js';
 
 export interface Palette {
   ink: string;

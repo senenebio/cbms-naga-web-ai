@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import React, { act } from 'react';
 import createRenderer from 'react-test-renderer';
 import ChartBlock from './ChartBlock';
-import type { ChartSpec } from '../../../src/llm/chart.js';
+import type { ChartSpec } from '@repo/llm/chart.js';
 
 /** Flush the lazy `import()` of the Recharts renderer. */
 function flush() {

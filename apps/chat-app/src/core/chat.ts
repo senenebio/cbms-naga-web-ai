@@ -7,10 +7,10 @@
  * full system prompt) with a per-question system prompt and yields the
  * same `ChatEvent` stream the UI renders.
  */
-import { streamQuestion, systemForQuestion, type ChatEvent } from '../../../src/llm/chat.js';
-import type { LLMClient, Message, SqlEngine } from '../../../src/llm/types.js';
-import { buildSchemaBlock } from '../../../src/schema.js';
-import { buildSystemPrompt } from '../../../src/llm/prompts.js';
+import { streamQuestion, systemForQuestion, type ChatEvent } from '@repo/llm/chat.js';
+import type { LLMClient, Message, SqlEngine } from '@repo/llm/types.js';
+import { buildSchemaBlock } from '@repo/schema.js';
+import { buildSystemPrompt } from '@repo/llm/prompts.js';
 
 export type { ChatEvent };
 

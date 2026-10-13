@@ -3,9 +3,9 @@ node_modules/
 
 # Build output
 dist/
-web/dist/
+apps/chat-app/dist/
 # Build-generated data bundle (copied from data/ by the build step)
-web/public/data/
+apps/chat-app/public/data/
 
 # Logs
 *.log

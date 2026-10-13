@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { chatQuestion, createChatSession } from './chat.js';
-import type { LLMClient, Message, SqlEngine, ToolCall } from '../../../src/llm/types.js';
-import { UNCONFIGURED_MESSAGE } from '../../../src/llm/provider.js';
+import type { LLMClient, Message, SqlEngine, ToolCall } from '@repo/llm/types.js';
+import { UNCONFIGURED_MESSAGE } from '@repo/llm/provider.js';
 import type { ChatEvent } from './chat.js';
 
 const stubEngine: SqlEngine = {

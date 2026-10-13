@@ -11,7 +11,7 @@
  * keeps this testable without a DOM — react-test-renderer).
  */
 import { Suspense, lazy } from 'react';
-import type { ChartSpec } from '../../../src/llm/chart.js';
+import type { ChartSpec } from '@repo/llm/chart.js';
 import type { Theme } from '../theme.js';
 import type { Palette } from './ChartRenderer.js';
 

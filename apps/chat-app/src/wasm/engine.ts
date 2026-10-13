@@ -8,8 +8,8 @@
  * (`protocol.ts`) — one in-flight query per `id`, serialized results.
  */
 import DbWorker from './db.worker?worker';
-import type { SqlEngine } from '../../../src/llm/types.js';
-import { TABLES, type TableName } from '../../../src/wasm/open_warehouse.js';
+import type { SqlEngine } from '@repo/llm/types.js';
+import { TABLES, type TableName } from '@repo/wasm/open_warehouse.js';
 import type { WorkerInboundMessage, WorkerOutboundMessage } from './protocol.js';
 
 export interface BrowserWarehouseHandle {

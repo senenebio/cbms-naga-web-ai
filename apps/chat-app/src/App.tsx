@@ -12,7 +12,7 @@
  * no duckdb-wasm, no real localStorage.
  */
 import { useEffect, useRef, useState } from 'react';
-import type { LLMClient, SqlEngine } from '../../src/llm/types.js';
+import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { BrowserWarehouseHandle } from './wasm/engine.js';
 import { openWarehouseBrowser } from './wasm/engine.js';
 import { resolveProvider, type KeyValueStorage, type ProviderResolution } from './core/provider.js';

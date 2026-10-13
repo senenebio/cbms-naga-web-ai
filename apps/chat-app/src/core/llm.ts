@@ -13,8 +13,8 @@ import type {
   Message,
   ToolCall,
   ToolSpec,
-} from '../../../src/llm/types.js';
-import { toApiMessages } from '../../../src/llm/client.js';
+} from '@repo/llm/types.js';
+import { toApiMessages } from '@repo/llm/client.js';
 
 export interface FetchLlmOptions {
   model: string;

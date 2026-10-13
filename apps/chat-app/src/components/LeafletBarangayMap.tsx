@@ -26,8 +26,8 @@ import {
   parseBarangayGeojson,
   shouldDropTileLayer,
   type BarangayFeature,
-} from '../../../src/map/geo.js';
-import { isRural } from '../../../src/data.js';
+} from '@repo/map/geo.js';
+import { isRural } from '@repo/data.js';
 import type { Theme } from '../theme.js';
 
 const GEO_URL = '/data/naga-barangays.geojson';

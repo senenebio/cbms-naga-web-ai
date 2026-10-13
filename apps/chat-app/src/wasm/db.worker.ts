@@ -17,7 +17,7 @@ import {
   openWarehouseWasm,
   type TableName,
   type WarehouseHandle,
-} from '../../../src/wasm/open_warehouse.js';
+} from '@repo/wasm/open_warehouse.js';
 import type { WorkerInboundMessage } from './protocol.js';
 
 let warehouse: WarehouseHandle | null = null;

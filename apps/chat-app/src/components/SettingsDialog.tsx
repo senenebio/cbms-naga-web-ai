@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import {
   maskKey,
   normalizeProviderConfig,
-} from '../../../src/llm/provider.js';
+} from '@repo/llm/provider.js';
 import { testLlmConnection } from '../core/llm.js';
 import {
   clearStoredConfig,

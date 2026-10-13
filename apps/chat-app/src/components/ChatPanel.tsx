@@ -13,15 +13,15 @@
  * "open Settings" hint above the composer.
  */
 import { useEffect, useRef, useState } from 'react';
-import type { LLMClient, Message, SqlEngine } from '../../../src/llm/types.js';
+import type { LLMClient, Message, SqlEngine } from '@repo/llm/types.js';
 import { chatQuestion, createChatSession, type ChatEvent } from '../core/chat.js';
-import type { ChartSpec } from '../../../src/llm/chart.js';
+import type { ChartSpec } from '@repo/llm/chart.js';
 import type { Theme } from '../theme.js';
 import AnswerMarkdown from './AnswerMarkdown.js';
 import ChartBlock from './ChartBlock.js';
 import ResultTable from './ResultTable.js';
 import MapSection from './MapSection.js';
-import { isMapApplicable } from '../../../src/map/geo.js';
+import { isMapApplicable } from '@repo/map/geo.js';
 import { DEMO_QUESTIONS } from '../demoQuestions.js';
 
 const SHOW_SQL_KEY = 'cbms-show-sql';

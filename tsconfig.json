@@ -13,7 +13,11 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/*": ["src/*"]
+    }
   },
-  "include": ["src", "web/src", "test", "vitest.config.ts", "web/vite.config.ts"]
+  "include": ["src", "apps/chat-app/src", "test", "vitest.config.ts", "apps/chat-app/vite.config.ts"]
 }

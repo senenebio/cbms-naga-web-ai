@@ -13,8 +13,8 @@ import {
   normalizeProviderConfig,
   type MaskedProviderConfig,
   type ResolvedLlmConfig,
-} from '../../../src/llm/provider.js';
-import type { LLMClient } from '../../../src/llm/types.js';
+} from '@repo/llm/provider.js';
+import type { LLMClient } from '@repo/llm/types.js';
 import { FetchLlmClient } from './llm.js';
 
 /** localStorage key holding the raw settings payload (BYOK). */
