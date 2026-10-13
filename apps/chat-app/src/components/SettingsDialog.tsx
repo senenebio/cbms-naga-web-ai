@@ -105,13 +105,18 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
   }
 
   return (
-    <div className="settings-overlay" role="dialog" aria-modal="true" aria-label="LLM settings">
-      <div className="settings-dialog">
-        <header>
-          <h2>LLM settings</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="LLM settings"
+    >
+      <div className="flex max-h-[85vh] w-full max-w-110 flex-col gap-3 overflow-y-auto rounded-lg border bg-background p-4 shadow-2xl">
+        <header className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold">LLM settings</h2>
           <button
             type="button"
-            className="settings-close"
+            className="text-muted-foreground hover:text-foreground"
             onClick={onClose}
             aria-label="Close settings"
           >
@@ -119,64 +124,90 @@ export default function SettingsDialog({ storage, onClose, onSaved }: SettingsDi
           </button>
         </header>
 
-        <div className="settings-fields">
-          <label>
+        <div className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
             <span>Base URL</span>
             <input
               type="text"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="http://localhost:11434/v1"
+              className="rounded-md border bg-transparent px-2.5 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
-            <small className="note">
+            <small className="text-xs font-normal text-muted-foreground">
               Any OpenAI-compatible endpoint — Ollama: <code>http://localhost:11434/v1</code> · LM
               Studio: <code>http://localhost:1234/v1</code> · llama.cpp: <code>http://localhost:8080/v1</code>{' '}
               · OpenRouter: <code>https://openrouter.ai/api/v1</code>
             </small>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
             <span>API key</span>
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="secret-BYOK-secret"
+              className="rounded-md border bg-transparent px-2.5 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
-            {storedKey ? <small className="note">Current key: {maskKey(storedKey)}</small> : null}
+            {storedKey ? (
+              <small className="text-xs font-normal text-muted-foreground">
+                Current key: {maskKey(storedKey)}
+              </small>
+            ) : null}
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
             <span>Model</span>
             <input
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
               placeholder="any model name"
+              className="rounded-md border bg-transparent px-2.5 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
-            <small className="note">
+            <small className="text-xs font-normal text-muted-foreground">
               e.g. <code>ukisai/Swift-1.5-Qwen3.8-27B-GGUF:IQ3_XXS</code> or <code>openrouter/free</code>
             </small>
           </label>
         </div>
 
-        <div className="settings-actions">
-          <button type="button" className="ask-btn" onClick={handleSave}>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-55"
+            onClick={handleSave}
+          >
             Save
           </button>
-          <button type="button" onClick={handleTest} disabled={testing}>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground disabled:opacity-55"
+            onClick={handleTest}
+            disabled={testing}
+          >
             {testing ? 'Testing…' : 'Test'}
           </button>
-          <button type="button" onClick={handleClear}>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground"
+            onClick={handleClear}
+          >
             Clear
           </button>
-          <button type="button" onClick={onClose}>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center justify-center rounded-md border px-4 text-xs font-semibold text-foreground"
+            onClick={onClose}
+          >
             Cancel
           </button>
         </div>
 
         {notice ? (
-          <p className={notice.kind === 'error' ? 'error' : 'note'}>{notice.text}</p>
+          <p className={notice.kind === 'error' ? 'text-sm text-destructive' : 'text-xs text-muted-foreground'}>
+            {notice.text}
+          </p>
         ) : null}
-        <p className="note">
+        <p className="text-xs text-muted-foreground">
           Settings and the API key are stored in this browser only (localStorage) — never sent to
           any server.
         </p>
