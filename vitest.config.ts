@@ -7,7 +7,7 @@ const rootDir = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      '@repo': join(rootDir, 'src'),
+      '@repo': join(rootDir, 'packages/core/src'),
       '@workspace/ui': join(rootDir, 'packages/ui/src'),
     },
   },

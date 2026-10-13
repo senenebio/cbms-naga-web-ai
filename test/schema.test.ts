@@ -3,10 +3,10 @@
  * no network): PII allowlist enforcement + C7 scoping + C8 conventions.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildSchemaBlock, resetSchemaCache, selectColumns, tableFacts } from '../src/schema.js';
-import { loadDataDictionary, allowedColumns } from '../src/data.js';
-import { buildSystemPrompt } from '../src/llm/prompts.js';
-import type { SqlEngine } from '../src/llm/types.js';
+import { buildSchemaBlock, resetSchemaCache, selectColumns, tableFacts } from '@repo/schema.js';
+import { loadDataDictionary, allowedColumns } from '@repo/data.js';
+import { buildSystemPrompt } from '@repo/llm/prompts.js';
+import type { SqlEngine } from '@repo/llm/types.js';
 
 const COUNTS: Record<string, number> = { household: 44_892, person: 181_197 };
 

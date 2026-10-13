@@ -11,7 +11,7 @@ import tailwindcss from '@tailwindcss/vite';
  * `apps/chat-app`).
  * - `apps/chat-app/public/data/` holds the bundled parquets + data dictionary,
  *   served at `/data/...` and loaded by the duckdb-wasm worker at runtime.
- * - `@repo/...` → the driver-free shared core at the repo-root `src/`.
+ * - `@repo/...` → the driver-free shared core at `packages/core/src/`.
  * - `@workspace/ui` → the shared UI package (Tailwind globals + shadcn).
  * - No `/api` proxy — this is a pure-static site (LLM is called directly).
  */
@@ -21,7 +21,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@repo': join(repoRoot, 'src'),
+      '@repo': join(repoRoot, 'packages', 'core', 'src'),
       '@workspace/ui': join(repoRoot, 'packages', 'ui', 'src'),
     },
   },

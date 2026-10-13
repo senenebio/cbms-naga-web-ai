@@ -8,7 +8,7 @@ import {
   maskKey,
   maskedView,
   ProviderConfigError,
-} from '../src/llm/provider.js';
+} from '@repo/llm/provider.js';
 
 describe('normalizeProviderConfig', () => {
   it('resolves a valid config and trims fields', () => {

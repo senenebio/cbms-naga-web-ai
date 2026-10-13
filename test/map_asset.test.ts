@@ -18,8 +18,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
-import { openWarehouseWasm, type WarehouseHandle } from '../src/wasm/open_warehouse.js';
-import { parseBarangayGeojson } from '../src/map/geo.js';
+import { openWarehouseWasm, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
+import { parseBarangayGeojson } from '@repo/map/geo.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DUCKDB_DIST = path.join(here, '..', 'node_modules', '@duckdb', 'duckdb-wasm', 'dist');

@@ -7,7 +7,7 @@
  * flag is the PII allowlist: ean/bsn/husn/hsn/coordinates/contact columns
  * are never exposed.
  */
-import dictionaryJson from '../data/2024-CBMS-Data-Dictionary.json';
+import dictionaryJson from '../../../data/2024-CBMS-Data-Dictionary.json';
 
 export interface DictEntry {
   variable_name: string;

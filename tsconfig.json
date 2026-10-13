@@ -22,7 +22,7 @@
     "baseUrl": ".",
     "paths": {
       "@repo/*": [
-        "src/*"
+        "packages/core/src/*"
       ],
       "@workspace/ui/*": [
         "packages/ui/src/*"
@@ -30,7 +30,7 @@
     }
   },
   "include": [
-    "src",
+    "packages/core/src",
     "apps/chat-app/src",
     "packages/brand-config/src",
     "packages/ui/src",

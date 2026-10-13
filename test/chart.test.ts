@@ -10,7 +10,7 @@ import {
   MAX_CHART_POINTS,
   MAKE_CHART_TOOL_SPEC,
   type ChartSpec,
-} from '../src/llm/chart.js';
+} from '@repo/llm/chart.js';
 
 describe('validateChartSpec — happy paths + defaults', () => {
   it('applies bar defaults (xKey "name", series ["value"]) and normalizes', () => {

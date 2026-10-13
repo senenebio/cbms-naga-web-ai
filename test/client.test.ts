@@ -9,10 +9,10 @@ import {
   trimHistory,
   RUN_SELECT_TOOL_SPEC,
   RUN_SELECT_TOOL_NAME,
-} from '../src/llm/client.js';
-import { createMockClient } from '../src/llm/mock_client.js';
-import { runSelect, SqlRejectedError } from '../src/llm/sql_tool.js';
-import type { AssistantMessage, LLMClient, Message, SqlEngine, ToolSpec } from '../src/llm/types.js';
+} from '@repo/llm/client.js';
+import { createMockClient } from '@repo/llm/mock_client.js';
+import { runSelect, SqlRejectedError } from '@repo/llm/sql_tool.js';
+import type { AssistantMessage, LLMClient, Message, SqlEngine, ToolSpec } from '@repo/llm/types.js';
 
 const TOTALS_SQL = `SELECT (SELECT COUNT(*) AS households FROM "household") AS households, (SELECT COUNT(*) AS persons FROM "person") AS persons`;
 

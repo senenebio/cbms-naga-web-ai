@@ -12,8 +12,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
-import { openWarehouseWasm, TABLES, type WarehouseHandle } from '../src/wasm/open_warehouse.js';
-import type { SqlEngine } from '../src/llm/types.js';
+import { openWarehouseWasm, TABLES, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
+import type { SqlEngine } from '@repo/llm/types.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DUCKDB_DIST = path.join(here, '..', 'node_modules', '@duckdb', 'duckdb-wasm', 'dist');

@@ -11,8 +11,8 @@ import {
   MAX_ROWS,
   MAX_RESULT_TEXT_BYTES,
   type RunSelectResult,
-} from '../src/llm/sql_tool.js';
-import type { SqlEngine } from '../src/llm/types.js';
+} from '@repo/llm/sql_tool.js';
+import type { SqlEngine } from '@repo/llm/types.js';
 
 /**
  * Fake `SqlEngine` that emulates the `runSelect` row-limit wrapper:

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { SqlEngine, LLMClient, Message, ToolSpec } from '../src/llm/types.js';
+import type { SqlEngine, LLMClient, Message, ToolSpec } from '@repo/llm/types.js';
 
 describe('scaffold contracts', () => {
   it('exposes the SqlEngine and LLMClient contracts', async () => {

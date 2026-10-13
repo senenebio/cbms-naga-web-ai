@@ -19,7 +19,7 @@
  * core (`src/data.ts`, phase B); the copies here are byte-for-byte the
  * reference values and must stay in sync.
  */
-import dictionaryJson from '../../data/2024-CBMS-Data-Dictionary.json';
+import dictionaryJson from '../../../../data/2024-CBMS-Data-Dictionary.json';
 import { WasmSqlEngine, type WasmConnection } from './wasm_engine.js';
 
 export type TableName = 'person' | 'household' | 'barangay';

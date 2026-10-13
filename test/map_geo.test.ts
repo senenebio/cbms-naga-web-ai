@@ -14,7 +14,7 @@ import {
   shouldDropTileLayer,
   MapGeoError,
   type BarangayFeature,
-} from '../src/map/geo.js';
+} from '@repo/map/geo.js';
 
 // ---------------------------------------------------------------------------
 // Inline fixtures
