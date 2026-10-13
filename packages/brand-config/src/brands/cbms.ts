@@ -11,7 +11,7 @@ export const CBMS: Brand = {
   version: '1.0.0',
   license: 'MIT',
   colors: {
-    primary: '#2563eb',
+    primary: '#1a3f8a',
     primaryForeground: '#ffffff',
   },
 };

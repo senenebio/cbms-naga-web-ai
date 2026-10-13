@@ -32,7 +32,7 @@ describe('applyBrand', () => {
     vi.stubGlobal('document', { title: 'old title', documentElement: el });
     const restore = applyBrand(CBMS, el);
 
-    expect(el.style.getPropertyValue('--brand-primary')).toBe('#2563eb');
+    expect(el.style.getPropertyValue('--brand-primary')).toBe('#1a3f8a');
     expect(el.style.getPropertyValue('--brand-primary-foreground')).toBe('#ffffff');
     expect(document.title).toBe('CBMS Naga 2024');
 
@@ -50,7 +50,7 @@ describe('BRANDS', () => {
     expect(CBMS.version).toBe('1.0.0');
     expect(CBMS.license).toBe('MIT');
     expect(CBMS.welcomeText).toBeTruthy();
-    expect(CBMS.colors.primary).toBe('#2563eb');
+    expect(CBMS.colors.primary).toBe('#1a3f8a');
     expect(CBMS.colors.primaryForeground).toBe('#ffffff');
   });
 });

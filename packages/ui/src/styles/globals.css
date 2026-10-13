@@ -49,10 +49,10 @@
   --chart-panel: #ffffff;
   --chart-surface: #fbfcfe;
   --chart-1: var(--brand-primary);
-  --chart-2: #16a34a;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #8b5cf6;
+  --chart-2: #b8860b;
+  --chart-3: #1a6b1a;
+  --chart-4: #c0392b;
+  --chart-5: #2e6b4a;
 }
 
 .dark {
@@ -82,10 +82,10 @@
   --chart-panel: #171c24;
   --chart-surface: #1a2029;
   --chart-1: var(--brand-primary);
-  --chart-2: #22c55e;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #a78bfa;
+  --chart-2: #d4a017;
+  --chart-3: #2d8a2d;
+  --chart-4: #d44a3a;
+  --chart-5: #3a8a6a;
 }
 
 @theme inline {
