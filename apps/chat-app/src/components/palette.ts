@@ -63,7 +63,7 @@ export function resolvePalette(theme: Theme): Palette {
     const out: Palette = { ...base, series: [...base.series] };
     for (const [token, key] of TOKENS) {
       const v = get(token);
-      if (v) out[key] = v;
+      if (v) (out as Record<string, string>)[key] = v;
     }
     SERIES_TOKENS.forEach((token, i) => {
       const v = get(token);
