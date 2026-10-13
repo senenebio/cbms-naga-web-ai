@@ -10,6 +10,7 @@ import createRenderer, {
   type ReactTestRenderer,
 } from 'react-test-renderer';
 import App, { type AppDeps } from './App';
+import { BRAND } from './brand';
 import { stubEngine } from './testStubs';
 import type { BrowserWarehouseHandle } from './wasm/engine';
 import type { ProviderResolution } from './core/provider';
@@ -48,7 +49,7 @@ describe('App (static, chat + settings only)', () => {
     const openWarehouse = vi.fn(async () => new Promise<BrowserWarehouseHandle>(() => {})); // never resolves
     const tree = await renderApp({ openWarehouse, resolveProvider: unconfigured() });
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('CBMS Naga City');
+    expect(text).toContain(BRAND.name);
     expect(text).toContain('Loading the warehouse');
   });
 

@@ -2,14 +2,22 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+const rootDir = fileURLToPath(new URL('.', import.meta.url));
+
 export default defineConfig({
   resolve: {
     alias: {
-      '@repo': join(fileURLToPath(new URL('.', import.meta.url)), 'src'),
+      '@repo': join(rootDir, 'src'),
+      '@workspace/ui': join(rootDir, 'packages/ui/src'),
     },
   },
   test: {
-    include: ['test/**/*.test.ts', 'apps/chat-app/src/**/*.test.{ts,tsx}', 'packages/brand-config/test/**/*.test.ts'],
+    include: [
+      'test/**/*.test.ts',
+      'apps/chat-app/src/**/*.test.{ts,tsx}',
+      'packages/brand-config/test/**/*.test.ts',
+      'packages/ui/**/*.test.{ts,tsx}',
+    ],
     environment: 'node',
   },
 });
