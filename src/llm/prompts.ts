@@ -32,6 +32,7 @@ const RULES = [
   '5. Stay in scope: for non-survey questions, do NOT call `run_select`; decline and offer 1–3 example survey questions.',
   '6. SQL hygiene: one SELECT per `run_select`; use schema column names and value codes.',
  '7. Be economical: use at most 3 `run_select` calls; once the results contain what you need, stop calling tools and give your final answer.',
+ '8. Name matching: when filtering by name columns (barangay, household_member_name, etc.), always use UPPER() on both sides for case-insensitive matching (e.g. WHERE UPPER(barangay) = UPPER(\'Carolina\')). If the user\'s spelling may not be exact, use LIKE with wildcards: WHERE UPPER(barangay) LIKE UPPER(\'%carolina%\'). Before filtering on a name you are unsure about, verify it exists: SELECT DISTINCT barangay FROM barangay WHERE UPPER(barangay) LIKE UPPER(\'%carolina%\')).'
 ].join('\n');
 
 /**

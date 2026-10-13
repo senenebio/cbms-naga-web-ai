@@ -97,28 +97,6 @@ export default function ChatPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 pb-2">
-        <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={showSql}
-            onChange={toggleShowSql}
-            className="size-3.5"
-          />
-          Show SQL
-        </label>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onClick={onNewChat}
-          title="Clear the conversation and start a blank chat"
-        >
-          New chat
-        </Button>
-      </div>
-
       {/* Feed */}
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2" ref={messagesEl}>
         {/* Welcome text (before first message) */}
@@ -205,6 +183,28 @@ export default function ChatPanel({
             </div>
           ),
         )}
+      </div>
+
+      {/* Footer: Show SQL + New Chat */}
+      <div className="flex items-center gap-3 px-1 pb-1 text-xs text-muted-foreground">
+        <label className="flex cursor-pointer items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={showSql}
+            onChange={toggleShowSql}
+            className="size-3"
+          />
+          Show SQL
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={onNewChat}
+          title="Clear the conversation and start a blank chat"
+        >
+          New chat
+        </Button>
       </div>
 
       {/* Unconfigured hint */}
