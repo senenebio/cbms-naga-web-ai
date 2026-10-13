@@ -13,10 +13,11 @@ White-label, browser-only AI interpretation platform. CBMS 2024 (Naga City) is b
 ## Layout (pnpm monorepo)
 
 - `apps/chat-app/` — React app (ChatLayout, Composer, SettingsMenu, chat feed, BYOK dialog) + browser core (warehouse, LLM client, provider)
+- `packages/core/` — `@workspace/core`: driver-free core (LLM client, SQL guardrails, schema, map logic, wasm engine); no `node:` / `@duckdb/node-api` imports; imported by both `apps/` and Node tests via `@repo/` alias
 - `packages/ui/` — `@workspace/ui`: Tailwind v4 globals.css (shadcn tokens), shadcn/ui primitives, ChatLayout, Composer, SettingsMenu, useAutoResize
 - `packages/brand-config/` — `@workspace/brand-config`: brand types, CBMS brand #1, `applyBrand()`
-- `src/` — driver-free core: no `node:` / `@duckdb/node-api` imports; imported by both `apps/` and Node tests
 - `data/` — source assets (parquets + data dictionary); `apps/chat-app/public/data/` is build-generated and gitignored
+- `test/` — root-level Node tests (WASM E2E, SQL tool, schema, chart, provider)
 
 ## Invariants
 
