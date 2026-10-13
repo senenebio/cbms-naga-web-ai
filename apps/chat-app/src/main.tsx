@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyBrand } from '@workspace/brand-config';
 import App from './App';
+import '@workspace/ui/styles/globals.css';
 import './styles.css';
 import { BRAND } from './brand';
 

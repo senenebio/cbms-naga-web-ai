@@ -1,0 +1,8 @@
+{
+  "name": "@workspace/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared UI: Tailwind v4 globals + shadcn/ui primitives (source-only; compiled by the consuming app's bundler).",
+  "main": "src/index.ts"
+}
