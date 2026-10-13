@@ -44,7 +44,8 @@ the generated copy.
    owner).
 3. `packages/brand-config/src/brands/<id>.ts` — the `Brand` entry
    (`dataset` references the descriptor); add it to the `BRANDS` map.
-4. `vercel.json` — a project entry with `"env": { "VITE_BRAND_ID": "<id>" }`.
+4. Vercel dashboard — a project importing this repo with the
+   `VITE_BRAND_ID=<id>` environment variable.
 5. Build with `VITE_BRAND_ID=<id> pnpm build` (Vite inlines the brand at
    build time — one brand per deployment, no runtime picker).
 
