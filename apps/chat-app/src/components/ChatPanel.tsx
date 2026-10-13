@@ -14,6 +14,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { LLMClient, Message, SqlEngine } from '@repo/llm/types.js';
+import { Button } from '@workspace/ui/components/button';
 import { chatQuestion, createChatSession, type ChatEvent } from '../core/chat.js';
 import type { ChartSpec } from '@repo/llm/chart.js';
 import type { Theme } from '../theme.js';
@@ -71,7 +72,9 @@ function Thinking({ startedAt }: { startedAt: number }) {
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
   }, [startedAt]);
-  return <div className="note">Thinking… {secs}s (querying the warehouse via the LLM)</div>;
+  return (
+    <div className="text-xs text-muted-foreground">Thinking… {secs}s (querying the warehouse via the LLM)</div>
+  );
 }
 
 interface ChatPanelProps {
@@ -205,12 +208,14 @@ export default function ChatPanel({
   const ready = engine !== null && !engineError;
 
   return (
-    <div className="chat-panel">
-      <div className="chat-header">
-        <span className="chat-title">Chat</span>
-        <button
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-2 pb-2">
+        <span className="text-sm font-semibold">Chat</span>
+        <Button
           type="button"
-          className="show-sql-btn"
+          variant="outline"
+          size="xs"
+          className="ml-auto"
           aria-pressed={showSql}
           title={
             showSql ? 'Hide the SQL and raw-rows sections' : 'Show the SQL and raw-rows sections'
@@ -218,46 +223,63 @@ export default function ChatPanel({
           onClick={toggleShowSql}
         >
           Show SQL
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="new-chat-btn"
+          variant="outline"
+          size="xs"
           onClick={newChat}
           title="Clear the conversation and start a blank chat"
         >
           New chat
-        </button>
+        </Button>
       </div>
 
-      <div className="chips">
+      <div className="flex flex-wrap gap-1.5 py-2.5">
         {DEMO_QUESTIONS.map((q, i) => (
-          <button key={i} type="button" disabled={busy || !ready} onClick={() => void ask(q)}>
+          <button
+            key={i}
+            type="button"
+            disabled={busy || !ready}
+            onClick={() => void ask(q)}
+            className="rounded-md border bg-muted/50 px-2.5 py-1.5 text-left text-xs text-foreground transition-colors hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-55"
+          >
             {q}
           </button>
         ))}
       </div>
 
-      <div className="messages" ref={messagesEl}>
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2" ref={messagesEl}>
         {engineError ? (
-          <div className="error">⚠️ Could not load the warehouse: {engineError}</div>
+          <div className="text-sm text-destructive">⚠️ Could not load the warehouse: {engineError}</div>
         ) : engine === null && messages.length === 0 ? (
-          <div className="note">Loading the warehouse (DuckDB in your browser)…</div>
+          <div className="text-xs text-muted-foreground">
+            Loading the warehouse (DuckDB in your browser)…
+          </div>
         ) : null}
         {messages.map((m, i) =>
           m.role === 'user' ? (
-            <div key={i} className="msg user">
-              <span className="who">You</span>
+            <div
+              key={i}
+              className="ml-[12%] whitespace-pre-wrap break-words rounded-lg bg-brand-primary px-3 py-2.5 text-sm text-brand-primary-foreground"
+            >
+              <span className="mb-1 block text-[11px] uppercase tracking-wide opacity-70">You</span>
               {m.content}
             </div>
           ) : (
-            <div key={i} className="msg assistant">
-              <span className="who">Assistant</span>
+            <div
+              key={i}
+              className="whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2.5 text-sm"
+            >
+              <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+                Assistant
+              </span>
               {m.error ? (
-                <div className="error">⚠️ {m.error}</div>
+                <div className="text-sm text-destructive">⚠️ {m.error}</div>
               ) : m.thinking ? (
                 <Thinking startedAt={m.startedAt} />
               ) : m.text === '' ? (
-                <div className="note">(no answer returned)</div>
+                <div className="text-xs text-muted-foreground">(no answer returned)</div>
               ) : (
                 <AnswerMarkdown text={m.text} />
               )}
@@ -267,10 +289,17 @@ export default function ChatPanel({
                 ))}
               {showSql &&
                 m.sql.map((s) => (
-                  <details key={`sql-${s.n}`}>
-                    <summary>SQL {s.n} (click to expand)</summary>
-                    <div className="body">
-                      <pre>{s.sql}</pre>
+                  <details
+                    key={`sql-${s.n}`}
+                    className="mt-2 rounded-md border bg-muted/40 text-xs"
+                  >
+                    <summary className="cursor-pointer select-none rounded-md px-2.5 py-1.5 font-medium text-foreground/80">
+                      SQL {s.n} (click to expand)
+                    </summary>
+                    <div className="overflow-x-auto px-2.5 pb-2.5">
+                      <pre className="whitespace-pre-wrap rounded-md bg-zinc-900 p-2.5 text-xs text-zinc-200">
+                        {s.sql}
+                      </pre>
                     </div>
                   </details>
                 ))}
@@ -278,12 +307,12 @@ export default function ChatPanel({
                 showSql || isMapApplicable(r.columns, r.rows) ? (
                   <div key={`rows-${r.n}`} className="result-block">
                     {showSql && (
-                      <details>
-                        <summary>
+                      <details className="mt-2 rounded-md border bg-muted/40 text-xs">
+                        <summary className="cursor-pointer select-none rounded-md px-2.5 py-1.5 font-medium text-foreground/80">
                           Raw rows {r.n} ({r.rows.length}
                           {r.truncated ? '+' : ''} rows)
                         </summary>
-                        <div className="body">
+                        <div className="overflow-x-auto px-2.5 pb-2.5">
                           <ResultTable columns={r.columns} rows={r.rows} truncated={r.truncated} />
                         </div>
                       </details>
@@ -300,26 +329,34 @@ export default function ChatPanel({
       </div>
 
       {client === null && (
-        <div className="note">
+        <div className="pt-2 text-xs text-muted-foreground">
           No LLM configured —{' '}
-          <button type="button" className="chip-link" onClick={onOpenSettings}>
+          <button
+            type="button"
+            className="text-primary underline underline-offset-2"
+            onClick={onOpenSettings}
+          >
             open Settings
           </button>{' '}
           to add a BYOK key (local / OpenRouter / OpenAI).
         </div>
       )}
 
-      <form className="ask" onSubmit={onSubmit}>
+      <form
+        className="flex gap-2 pt-2.5"
+        onSubmit={onSubmit}
+      >
         <input
           type="text"
           value={draft}
           disabled={!ready}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Ask about Naga City's 2024 CBMS survey, e.g. household size or medical treatment…"
+          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-55"
         />
-        <button type="submit" disabled={busy || draft.trim() === '' || !ready}>
+        <Button type="submit" disabled={busy || draft.trim() === '' || !ready}>
           {busy ? 'Waiting…' : 'Ask'}
-        </button>
+        </Button>
       </form>
     </div>
   );
