@@ -33,7 +33,7 @@ export function ChatLayout({
   status,
 }: ChatLayoutProps) {
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="mx-auto flex h-dvh max-w-4xl flex-col px-4">
       <header className="flex items-center gap-2 border-b px-4 py-3">
         <span className="text-base font-bold">{title}</span>
         {status ? (
