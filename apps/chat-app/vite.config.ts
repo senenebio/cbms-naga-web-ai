@@ -28,5 +28,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libs into a separate cacheable chunk so app-code
+          // updates don't bust the React/react-dom cache.
+          vendor: ['react', 'react-dom', 'react-dom/client'],
+        },
+      },
+    },
   },
 });
