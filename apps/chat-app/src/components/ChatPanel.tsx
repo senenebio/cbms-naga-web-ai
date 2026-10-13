@@ -59,15 +59,24 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const messagesEl = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to the newest message (rAF to avoid layout thrash on
-  // per-token streaming updates). Smooth scroll for new messages.
+  // Track whether the user is near the bottom (within 80px).
+  const nearBottomRef = useRef(true);
   useEffect(() => {
     const el = messagesEl.current;
     if (!el) return;
-    const raf = requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    });
-    return () => cancelAnimationFrame(raf);
+    const onScroll = () => {
+      nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Auto-scroll: pin to bottom when user is already there (streaming tokens,
+  // new messages). Instant during streaming to avoid jank.
+  useEffect(() => {
+    const el = messagesEl.current;
+    if (!el || !nearBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const ready = engine !== null && !engineError;
