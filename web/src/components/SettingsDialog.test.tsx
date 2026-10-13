@@ -59,7 +59,9 @@ describe('SettingsDialog (BYOK)', () => {
       React.createElement(SettingsDialog, { storage, onClose: () => {} }),
     );
 
-    const [urlInput, modelInput] = textInputs(tree.root);
+    const inputs = textInputs(tree.root);
+    const urlInput = inputs[0]!;
+    const modelInput = inputs[1]!;
     const keyInput = tree.root.findByProps({ type: 'password' });
     act(() => {
       urlInput.props.onChange({ target: { value: 'http://localhost:11434/v1' } });
@@ -90,7 +92,7 @@ describe('SettingsDialog (BYOK)', () => {
         model: 'llama3.1',
       }),
     );
-    let tree: ReactTestRenderer.ReactTestRenderer;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       tree = ReactTestRenderer.create(
         React.createElement(SettingsDialog, { storage, onClose: () => {} }),
@@ -158,7 +160,7 @@ describe('SettingsDialog (BYOK)', () => {
     );
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    let tree: ReactTestRenderer.ReactTestRenderer;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       tree = ReactTestRenderer.create(
         React.createElement(SettingsDialog, { storage, onClose: () => {} }),
@@ -170,7 +172,7 @@ describe('SettingsDialog (BYOK)', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('http://localhost:11434/v1/chat/completions');
     const opts = init as { headers: Record<string, string>; body: string };
     expect(opts.headers.Authorization).toBe('Bearer sk-stored-1234567890');

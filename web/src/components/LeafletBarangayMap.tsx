@@ -167,8 +167,8 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
       }
     });
 
-    const styleFor = (feature: GeoJSON.Feature): L.PathOptions => {
-      const code = String(feature.properties?.code ?? '');
+    const styleFor = (feature: GeoJSON.Feature | undefined): L.PathOptions => {
+      const code = String(feature?.properties?.code ?? '');
       const entry = model?.byCode.get(code);
       const selected = selectedCode === code;
       return {
@@ -214,8 +214,8 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
   useEffect(() => {
     const layer = geoLayerRef.current;
     if (!layer || !model) return;
-    layer.setStyle((feature: GeoJSON.Feature) => {
-      const code = String(feature.properties?.code ?? '');
+    layer.setStyle((feature: GeoJSON.Feature | undefined) => {
+      const code = String(feature?.properties?.code ?? '');
       const entry = model.byCode.get(code);
       const selected = selectedCode === code;
       return {

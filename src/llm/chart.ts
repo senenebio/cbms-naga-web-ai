@@ -12,6 +12,7 @@
  */
 
 import { isNonMetricColumn } from '../data.js';
+import type { ToolSpec } from './types.js';
 
 export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
 
@@ -141,9 +142,10 @@ export function validateChartSpec(raw: unknown): ChartSpec {
 
   // 4b. series must not be coordinate/identifier columns — not plottable metrics
   for (let i = 0; i < series.length; i++) {
-    if (isNonMetricColumn(series[i])) {
+    const col = series[i];
+    if (col && isNonMetricColumn(col)) {
       throw new ChartSpecError(
-        `chart.series[${i}] "${series[i]}" is a coordinate/identifier column, not a plottable metric — use a value column (count, sum, or average)`,
+        `chart.series[${i}] "${col}" is a coordinate/identifier column, not a plottable metric — use a value column (count, sum, or average)`,
       );
     }
   }

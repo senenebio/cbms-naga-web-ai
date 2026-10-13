@@ -52,7 +52,7 @@ export default function ChartBlock({ spec, theme }: ChartBlockProps) {
             data={data}
             xKey={spec.xKey}
             series={spec.series}
-            stacked={spec.stacked}
+            stacked={spec.stacked ?? false}
             palette={palette}
           />
         </Suspense>

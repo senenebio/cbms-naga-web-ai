@@ -7,6 +7,7 @@
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "pnpm@12.11.2",
   "scripts": {
     "dev:web": "vite web",
     "prebuild:web": "node scripts/copy-data.mjs",

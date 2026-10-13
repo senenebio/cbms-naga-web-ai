@@ -357,9 +357,9 @@ describe('colorScale', () => {
     const high = scale(100)!;
 
     // Parse rgb values
-    const parseRgb = (s: string) => {
-      const m = s.match(/\d+/g);
-      return m ? m.map(Number) : [0, 0, 0];
+    const parseRgb = (s: string): [number, number, number] => {
+      const m = s.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
+      return [m[0] ?? 0, m[1] ?? 0, m[2] ?? 0];
     };
     const [r1, g1, b1] = parseRgb(low);
     const [r2, g2, b2] = parseRgb(high);

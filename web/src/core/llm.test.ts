@@ -20,7 +20,7 @@ describe('testLlmConnection', () => {
     await testLlmConnection({ baseUrl: 'http://localhost:11434/v1/', apiKey: 'key', model: 'm' });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('http://localhost:11434/v1/chat/completions');
     const opts = init as { headers: Record<string, string>; body: string };
     expect(opts.headers.Authorization).toBe('Bearer key');
@@ -38,7 +38,7 @@ describe('testLlmConnection', () => {
 
     await testLlmConnection({ baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'm' });
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect((init as { headers: Record<string, string> }).headers.Authorization).toBeUndefined();
   });
 
