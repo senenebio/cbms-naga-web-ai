@@ -9,7 +9,7 @@
   },
   "packageManager": "pnpm@12.11.2",
   "scripts": {
-    "dev": "vite --root apps/chat-app",
+    "dev": "vite apps/chat-app",
     "prebuild": "node scripts/copy-data.mjs",
     "build": "vite build apps/chat-app",
     "start": "pnpm build && vite preview apps/chat-app",
