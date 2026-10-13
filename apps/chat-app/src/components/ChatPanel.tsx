@@ -82,10 +82,15 @@ export default function ChatPanel({
     persistShowSql(next);
   };
 
-  // Auto-scroll to the newest message.
+  // Auto-scroll to the newest message (rAF to avoid layout thrash on
+  // per-token streaming updates).
   useEffect(() => {
     const el = messagesEl.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const raf = requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [messages]);
 
   const ready = engine !== null && !engineError;

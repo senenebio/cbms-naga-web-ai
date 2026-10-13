@@ -1,6 +1,6 @@
 # Monorepo + White-Label Chat UI Spec
 
-**Status: DRAFT — pending review**
+**Status: COMPLETE — Phase A–E implemented**
 
 Restructure this repository (in place) into a **pnpm-workspace monorepo** with a
 white-label, hyper-minimalist chat UI built on **React 19 + Vite + Tailwind CSS v4 +
