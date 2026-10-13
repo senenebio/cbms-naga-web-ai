@@ -1,56 +1,43 @@
 /**
- * Applies a brand's theming tokens to the document as CSS custom properties.
+ * Applies a brand to the document: writes the brand accent CSS custom
+ * properties onto `<html>` and sets `document.title`.
  *
- * `applyBrand` sets the brand's **light** token set on `<html>` and returns a
- * cleanup function that restores the previous inline values (useful in tests
- * and for hot-swapping brands). The app's theme manager swaps the active
- * palette (light/dark) by re-applying the chosen token set.
+ * `globals.css` maps `--brand-primary`/`--brand-primary-foreground` into
+ * Tailwind theme tokens, so applying a brand is a pure CSS-variable repaint —
+ * no re-render. Returns a cleanup function that restores the previous state
+ * (used by tests).
  */
-import type { Brand, BrandTokens } from './types.js';
+import type { Brand } from './types.js';
 
-/** camelCase token key → `--kebab-case` CSS custom property name. */
-export function tokenName(key: string): string {
-  return `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
-}
+const BRAND_VARS = ['--brand-primary', '--brand-primary-foreground'] as const;
 
-/** Convert a token set to a `{ '--x': value }` map. */
-export function tokensToVars(tokens: BrandTokens): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(tokens).map(([k, v]) => [tokenName(k), v]),
-  );
-}
-
-/**
- * Apply `brand`'s light tokens to `target` (default: `<html>`).
- * Returns a function that restores the previous inline values.
- */
 export function applyBrand(
   brand: Brand,
   target: HTMLElement = document.documentElement,
 ): () => void {
+  const prevTitle =
+    typeof document !== 'undefined' ? document.title : undefined;
   const prev = new Map<string, string>();
-  const vars = tokensToVars(brand.tokens.light);
-  for (const [name, value] of Object.entries(vars)) {
+  const values: Record<string, string> = {
+    '--brand-primary': brand.colors.primary,
+    '--brand-primary-foreground': brand.colors.primaryForeground,
+  };
+  for (const [name, value] of Object.entries(values)) {
     prev.set(name, target.style.getPropertyValue(name));
     target.style.setProperty(name, value);
+  }
+  if (typeof document !== 'undefined') {
+    document.title = brand.name;
   }
   return () => {
     for (const [name, oldValue] of prev) {
       if (oldValue === '') target.style.removeProperty(name);
       else target.style.setProperty(name, oldValue);
     }
+    if (typeof document !== 'undefined' && prevTitle !== undefined) {
+      document.title = prevTitle;
+    }
   };
 }
 
-/**
- * Swap the active palette (light/dark) for an already-applied brand.
- * The app's theme manager calls this when the user flips the theme.
- */
-export function applyThemeTokens(
-  tokens: BrandTokens,
-  target: HTMLElement = document.documentElement,
-): void {
-  for (const [name, value] of Object.entries(tokensToVars(tokens))) {
-    target.style.setProperty(name, value);
-  }
-}
+export { BRAND_VARS };

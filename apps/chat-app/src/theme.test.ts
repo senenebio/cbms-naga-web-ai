@@ -15,7 +15,6 @@ function makeElement() {
     getAttribute(name: string) {
       return attributes.get(name) ?? null;
     },
-    style: { setProperty: vi.fn(), getPropertyValue: () => '', removeProperty: vi.fn() },
   };
 }
 

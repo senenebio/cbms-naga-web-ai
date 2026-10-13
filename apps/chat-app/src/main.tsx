@@ -8,8 +8,8 @@ import App from './App';
 import './styles.css';
 import { BRAND } from './brand';
 
-// White-label identity: set the brand's theming tokens on <html> before the
-// first paint (the theme manager swaps light/dark palettes from here on).
+// White-label identity: brand accent variables + document title, before the
+// first paint.
 applyBrand(BRAND);
 
 const rootEl = document.getElementById('root');
