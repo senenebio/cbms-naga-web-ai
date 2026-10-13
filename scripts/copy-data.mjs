@@ -12,8 +12,8 @@
  * Dest: `apps/chat-app/public/data/<brand-id>/...` (structure preserved).
  *
  * The script is brand-agnostic: it copies every `data/<dir>/` that contains
- * a `warehouse/` subdirectory. Set `BRAND_ID` env var to copy only one
- * brand (per-brand deployments); unset = copy all.
+ * a `warehouse/` subdirectory. Set `BRAND_ID` to copy only one brand
+ * (per-brand deployments); unset = copy all. Unknown `BRAND_ID` → exit 1.
  *
  * `apps/chat-app/public/data/` is gitignored (build-generated). Run via
  * `pnpm run prebuild` (automatic before `pnpm build`) or directly:
@@ -28,14 +28,27 @@ const dataDir = join(root, 'data');
 const out = join(root, 'apps/chat-app/public/data');
 const brandFilter = process.env.BRAND_ID; // e.g. 'cbms'
 
+const dirs = readdirSync(dataDir, { withFileTypes: true })
+  .filter((e) => e.isDirectory())
+  .map((e) => e.name);
+
+if (brandFilter) {
+  if (!dirs.includes(brandFilter)) {
+    console.error(
+      `[copy-data] Unknown BRAND_ID "${brandFilter}". Available: ${dirs.join(', ') || '(none)'}`,
+    );
+    process.exit(1);
+  }
+}
+
 // Clean and recreate the destination so stale files never linger.
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
-for (const name of readdirSync(dataDir, { withFileTypes: true })) {
-  if (!name.isDirectory() || (brandFilter && name.name !== brandFilter)) continue;
-  const src = join(dataDir, name.name);
+for (const name of dirs) {
+  if (brandFilter && name !== brandFilter) continue;
+  const src = join(dataDir, name);
   if (!readdirSync(src).includes('warehouse')) continue; // not a brand dir
-  cpSync(src, join(out, name.name), { recursive: true });
-  console.log(`[copy-data] Copied brand "${name.name}" → apps/chat-app/public/data/${name.name}/`);
+  cpSync(src, join(out, name), { recursive: true });
+  console.log(`[copy-data] Copied brand "${name}" → apps/chat-app/public/data/${name}/`);
 }

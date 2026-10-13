@@ -19,3 +19,5 @@ export const CBMS: Brand = {
 };
 
 export const BRANDS = { cbms: CBMS } as const;
+
+export type BrandId = keyof typeof BRANDS;

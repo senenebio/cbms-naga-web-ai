@@ -6,4 +6,5 @@
 export type { Brand, Dataset, DictEntry } from './types.js';
 export { applyBrand } from './applyBrand.js';
 export { CBMS, BRANDS } from './brands/cbms.js';
+export type { BrandId } from './brands/cbms.js';
 export { CBMS_DATASET } from './datasets/cbms.js';
