@@ -10,6 +10,7 @@
  * (same pattern as `ChartBlock`/Recharts).
  */
 import { Suspense, lazy, useState } from 'react';
+import { Button } from '@workspace/ui/components/button';
 import type { Theme } from '../theme.js';
 
 const LeafletBarangayMap = lazy(() => import('./LeafletBarangayMap.js'));
@@ -23,17 +24,18 @@ interface MapSectionProps {
 export default function MapSection({ columns, rows, theme }: MapSectionProps) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="map-section">
-      <button
+    <div className="mt-2 rounded-md border bg-muted/30 p-2">
+      <Button
         type="button"
-        className="map-toggle"
+        variant="outline"
+        size="xs"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
         {open ? 'Hide map' : 'Show map'}
-      </button>
+      </Button>
       {open && (
-        <Suspense fallback={<div className="note">Loading map…</div>}>
+        <Suspense fallback={<div className="text-xs text-muted-foreground">Loading map…</div>}>
           <LeafletBarangayMap columns={columns} rows={rows} theme={theme} />
         </Suspense>
       )}

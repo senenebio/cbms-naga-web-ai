@@ -236,15 +236,15 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
 
   if (loadError) {
     return (
-      <div className="barangay-map">
-        <div className="note">Map unavailable.</div>
+      <div className="flex flex-col gap-1.5 pt-2">
+        <div className="text-xs text-muted-foreground">Map unavailable.</div>
       </div>
     );
   }
   if (!model || !key) {
     return (
-      <div className="barangay-map">
-        <div className="note">Loading map…</div>
+      <div className="flex flex-col gap-1.5 pt-2">
+        <div className="text-xs text-muted-foreground">Loading map…</div>
       </div>
     );
   }
@@ -252,11 +252,15 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
   const selected = selectedCode ? model.byCode.get(selectedCode) : undefined;
 
   return (
-    <div className="barangay-map">
+    <div className="flex flex-col gap-1.5 pt-2">
       {numCols.length >= 2 && (
-        <label className="map-metric">
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           Metric:
-          <select value={metric} onChange={(e) => setValueCol(e.target.value)}>
+          <select
+            value={metric}
+            onChange={(e) => setValueCol(e.target.value)}
+            className="rounded-md border bg-background px-1.5 py-1 text-xs"
+          >
             {numCols.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -265,7 +269,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
           </select>
         </label>
       )}
-      <label className="map-fill-opacity">
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         Fill opacity:
         <input
           type="range"
@@ -274,22 +278,28 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
           step={0.05}
           value={fillOpacity}
           onChange={(e) => setFillOpacity(Number(e.target.value))}
+          className="w-30 accent-brand-primary"
         />
       </label>
-      <div className="map-leaflet" ref={containerRef} />
-      {tilesOffline && <div className="map-note">Basemap unavailable — polygons only.</div>}
+      <div className="map-leaflet h-80 overflow-hidden rounded-md border" ref={containerRef} />
+      {tilesOffline && (
+        <div className="text-xs text-muted-foreground">Basemap unavailable — polygons only.</div>
+      )}
       {selected && (
-        <div className="map-detail">
+        <div className="text-xs">
           <strong>{selected.name}</strong>: {formatValue(selected.value)} {metric} ·{' '}
           {isRural(selected.name) ? 'Rural' : 'Urban'}
         </div>
       )}
-      <div className="map-legend">
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
         <span>{formatValue(model.min)}</span>
-        <div className="map-legend-ramp" aria-hidden="true" />
+        <div
+          className="h-2 flex-1 rounded-sm bg-gradient-to-r from-blue-100 to-blue-900"
+          aria-hidden="true"
+        />
         <span>{formatValue(model.max)}</span>
       </div>
-      <div className="map-attr">
+      <div className="text-[10.5px] text-muted-foreground">
         © OpenStreetMap contributors · PSGC © PSA · Boundaries © Christian Blanquera / OSSPhilippines (MIT)
       </div>
     </div>
