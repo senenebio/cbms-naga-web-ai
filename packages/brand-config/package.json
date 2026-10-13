@@ -1,0 +1,8 @@
+{
+  "name": "@workspace/brand-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "White-label brand identity + theming tokens for chat apps (source-only; compiled by the consuming app's bundler).",
+  "main": "src/index.ts"
+}

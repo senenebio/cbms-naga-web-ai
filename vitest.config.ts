@@ -9,7 +9,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['test/**/*.test.ts', 'apps/chat-app/src/**/*.test.{ts,tsx}'],
+    include: ['test/**/*.test.ts', 'apps/chat-app/src/**/*.test.{ts,tsx}', 'packages/brand-config/test/**/*.test.ts'],
     environment: 'node',
   },
 });
