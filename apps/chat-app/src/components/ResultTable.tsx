@@ -60,7 +60,7 @@ export default function ResultTable({ columns, rows, truncated = false }: Result
 
   return (
     <>
-      <table className="result-table">
+      <table className="w-full border-collapse text-xs">
         <thead>
           <tr>
             {columns.map((c, i) => (
@@ -69,8 +69,13 @@ export default function ResultTable({ columns, rows, truncated = false }: Result
                 aria-sort={
                   sortKey === i ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
                 }
+                className="border bg-muted px-2 py-1 text-left whitespace-nowrap"
               >
-                <button type="button" className="sort-btn" onClick={() => toggleSort(i)}>
+                <button
+                  type="button"
+                  className="cursor-pointer font-bold"
+                  onClick={() => toggleSort(i)}
+                >
                   {c} {sortKey === i ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                 </button>
               </th>
@@ -81,13 +86,15 @@ export default function ResultTable({ columns, rows, truncated = false }: Result
           {shown.map((r, i) => (
             <tr key={i}>
               {r.map((v, j) => (
-                <td key={j}>{formatCell(v)}</td>
+                <td key={j} className="border px-2 py-1 whitespace-nowrap">
+                  {formatCell(v)}
+                </td>
               ))}
             </tr>
           ))}
           {shown.length === 0 && (
             <tr>
-              <td colSpan={columns.length} className="muted">
+              <td colSpan={columns.length} className="border px-2 py-1 text-sm text-muted-foreground">
                 No rows returned.
               </td>
             </tr>
@@ -95,12 +102,12 @@ export default function ResultTable({ columns, rows, truncated = false }: Result
         </tbody>
       </table>
       {rows.length > shown.length && (
-        <div className="note">
+        <div className="pt-1 text-xs text-muted-foreground">
           Showing first {shown.length} of {rows.length} rows.
         </div>
       )}
       {truncated && (
-        <div className="note">
+        <div className="pt-1 text-xs text-muted-foreground">
           Result truncated by the read-only SQL gate (100-row / 50 KB cap). Showing first{' '}
           {shown.length} rows.
         </div>
