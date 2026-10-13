@@ -8,5 +8,5 @@
 
 ## Build flow
 
-`web/public/data/` is build-generated — copied from `data/` by `prebuild:web`
+`apps/chat-app/public/data/` is build-generated — copied from `data/` by `prebuild`
 (`scripts/copy-data.mjs`) — and is gitignored. Edit `data/`, never the generated copy.
