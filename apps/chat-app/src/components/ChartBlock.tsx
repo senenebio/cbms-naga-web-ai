@@ -31,22 +31,24 @@ interface ChartBlockProps {
 export default function ChartBlock({ spec, theme }: ChartBlockProps) {
   const palette = PALETTES[theme];
   const data = spec.data;
-  const title = spec.title ? <figcaption className="chart-title">{spec.title}</figcaption> : null;
+  const title = spec.title ? (
+    <figcaption className="mb-2 text-xs font-medium">{spec.title}</figcaption>
+  ) : null;
 
   if (data.length === 0) {
     return (
-      <figure className="chart-block">
+      <figure className="my-2.5 rounded-md border bg-muted/30 p-2.5">
         {title}
-        <div className="note">No chart data to display.</div>
+        <div className="text-xs text-muted-foreground">No chart data to display.</div>
       </figure>
     );
   }
 
   return (
-    <figure className="chart-block">
+    <figure className="my-2.5 rounded-md border bg-muted/30 p-2.5">
       {title}
-      <div className="chart-body" style={{ background: palette.surface, borderRadius: 8 }}>
-        <Suspense fallback={<div className="note">Loading chart…</div>}>
+      <div className="w-full p-1" style={{ background: palette.surface, borderRadius: 8 }}>
+        <Suspense fallback={<div className="text-xs text-muted-foreground">Loading chart…</div>}>
           <ChartRenderer
             type={spec.type}
             data={data}
