@@ -7,7 +7,6 @@
  * `messages`, `busy`, etc. come from the `useChat` hook (in App).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@workspace/ui/components/button';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { ChatMsg } from '../hooks/use-chat.js';
 import type { Theme } from '../theme.js';
@@ -18,23 +17,6 @@ import MapSection from './MapSection.js';
 import { isMapApplicable } from '@repo/map/geo.js';
 import { BRAND } from '../brand.js';
 
-const SHOW_SQL_KEY = 'cbms-show-sql';
-
-function readShowSql(): boolean {
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(SHOW_SQL_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function persistShowSql(value: boolean): void {
-  try {
-    localStorage.setItem(SHOW_SQL_KEY, value ? 'true' : 'false');
-  } catch {
-    /* ignore */
-  }
-}
 
 /** "Thinking… Ns" ticker; re-renders every second until the first token. */
 function Thinking({ startedAt }: { startedAt: number }) {
@@ -60,7 +42,7 @@ export interface ChatPanelProps {
   client: LLMClient | null;
   onOpenSettings: () => void;
   theme?: Theme;
-  onNewChat: () => void;
+  showSql: boolean;
 }
 
 export default function ChatPanel({
@@ -71,16 +53,9 @@ export default function ChatPanel({
   client,
   onOpenSettings,
   theme = 'light',
-  onNewChat,
+  showSql,
 }: ChatPanelProps) {
-  const [showSql, setShowSql] = useState(readShowSql);
   const messagesEl = useRef<HTMLDivElement>(null);
-
-  const toggleShowSql = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.checked;
-    setShowSql(next);
-    persistShowSql(next);
-  };
 
   // Auto-scroll to the newest message (rAF to avoid layout thrash on
   // per-token streaming updates).
@@ -183,28 +158,6 @@ export default function ChatPanel({
             </div>
           ),
         )}
-      </div>
-
-      {/* Footer: Show SQL + New Chat */}
-      <div className="flex items-center gap-3 px-1 pb-1 text-xs text-muted-foreground">
-        <label className="flex cursor-pointer items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={showSql}
-            onChange={toggleShowSql}
-            className="size-3"
-          />
-          Show SQL
-        </label>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={onNewChat}
-          title="Clear the conversation and start a blank chat"
-        >
-          New chat
-        </Button>
       </div>
 
       {/* Unconfigured hint */}

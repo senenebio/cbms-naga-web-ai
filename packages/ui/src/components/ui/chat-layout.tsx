@@ -20,6 +20,8 @@ export interface ChatLayoutProps {
   children: ReactNode;
   /** The composer row (pinned to the bottom). */
   composer: ReactNode;
+  /** Optional footer bar rendered below the composer (e.g. Show SQL, New Chat). */
+  footer?: ReactNode;
   /** Optional status line shown between header and feed (e.g. model label). */
   status?: ReactNode;
 }
@@ -29,11 +31,12 @@ export function ChatLayout({
   headerRight,
   children,
   composer,
+  footer,
   status,
 }: ChatLayoutProps) {
   return (
     <div className="flex h-dvh items-center justify-center p-4 sm:p-6">
-      <div className="flex h-full max-h-[90dvh] w-full max-w-5xl flex-col">
+      <div className="flex h-full max-h-[90dvh] w-[95%] max-w-7xl flex-col">
         <header className="flex items-center gap-2 border-b px-4 py-3">
           <span className="text-base font-bold">{title}</span>
           {status ? (
@@ -51,11 +54,12 @@ export function ChatLayout({
             {children}
           </ScrollArea>
           <div
-            className="px-4 pb-4"
-            style={{ paddingBottom: `calc(1rem + env(safe-area-inset-bottom))` }}
+            className="px-4 pb-2"
+            style={{ paddingBottom: `calc(0.5rem + env(safe-area-inset-bottom))` }}
           >
             {composer}
           </div>
+          {footer ? <div className="px-4 pb-3">{footer}</div> : null}
         </div>
       </div>
     </div>

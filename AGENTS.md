@@ -38,4 +38,6 @@ White-label, browser-only AI interpretation platform. CBMS 2024 (Naga City) is b
   - `browser-only-spec.md` (complete), `advanced-charts-spec.md` (complete),
     `map-feature-spec.md` (implemented; display under reconsideration),
     `openai-endpoint-spec.md` (implemented — single OpenAI-compatible endpoint),
-    `monorepo-whitelabel-spec.md` (complete — Phase A–E)
+    `monorepo-whitelabel-spec.md` (complete — Phase A–E),
+    `data-aware-brand-spec.md` (draft — brand carries its dataset),
+    `vercel-deployment-spec.md` (draft — per-brand Vercel deployments)

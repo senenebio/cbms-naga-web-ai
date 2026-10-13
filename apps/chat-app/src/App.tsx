@@ -13,6 +13,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { Button } from '@workspace/ui/components/button';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import { ChatLayout } from '@workspace/ui/components/chat-layout.js';
 import { Composer } from '@workspace/ui/components/composer.js';
@@ -109,6 +110,20 @@ export default function App({ deps = defaultDeps }: AppProps) {
     engineError,
   });
 
+  // Show SQL toggle (persisted).
+  const [showSql, setShowSql] = useState(() => {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem('cbms-show-sql') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const toggleShowSql = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setShowSql(next);
+    try { localStorage.setItem('cbms-show-sql', next ? 'true' : 'false'); } catch { /* ignore */ }
+  };
+
   const modelLabel =
     provider !== 'init' && provider.status === 'configured'
       ? provider.masked.model ?? provider.config.model
@@ -147,6 +162,28 @@ export default function App({ deps = defaultDeps }: AppProps) {
           }
         />
       }
+      footer={
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={showSql}
+              onChange={toggleShowSql}
+              className="size-3"
+            />
+            Show SQL
+          </label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={newChat}
+            title="Clear the conversation and start a blank chat"
+          >
+            New chat
+          </Button>
+        </div>
+      }
     >
       <ChatPanel
         messages={messages}
@@ -156,7 +193,7 @@ export default function App({ deps = defaultDeps }: AppProps) {
         client={client}
         onOpenSettings={() => setSettingsOpen(true)}
         theme={theme}
-        onNewChat={newChat}
+        showSql={showSql}
       />
 
       {settingsOpen && (

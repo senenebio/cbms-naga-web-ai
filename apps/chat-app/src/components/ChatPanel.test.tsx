@@ -1,14 +1,13 @@
 /**
  * ChatPanel — presentational feed tests.
  *
- * Tests the message list, toolbar, welcome text, and unconfigured hint.
+ * Tests the message list, welcome text, and unconfigured hint.
  * The chat logic (streaming, charts, maps) is tested via useChat / App.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import ChatPanel from './ChatPanel';
 import { stubEngine } from '../testStubs';
-import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { ChatMsg } from '../hooks/use-chat.js';
 
 function renderPanel(props: Partial<React.ComponentProps<typeof ChatPanel>> = {}) {
@@ -19,23 +18,13 @@ function renderPanel(props: Partial<React.ComponentProps<typeof ChatPanel>> = {}
       engine={stubEngine()}
       client={null}
       onOpenSettings={() => {}}
-      onNewChat={() => {}}
+      showSql={false}
       {...props}
     />,
   );
 }
 
 describe('ChatPanel (presentational feed)', () => {
-  beforeEach(() => {
-    localStorage.removeItem('cbms-show-sql');
-  });
-
-  it('renders the toolbar with Show SQL and New chat', () => {
-    renderPanel();
-    expect(screen.getByRole('checkbox', { name: 'Show SQL' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument();
-  });
-
   it('shows the welcome text when there are no messages', () => {
     renderPanel();
     expect(screen.getByText(/Explore Naga City/)).toBeInTheDocument();
