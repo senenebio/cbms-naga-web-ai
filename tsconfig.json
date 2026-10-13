@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -16,8 +21,22 @@
     "useDefineForClassFields": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/*": ["src/*"]
+      "@repo/*": [
+        "src/*"
+      ],
+      "@workspace/ui/*": [
+        "packages/ui/src/*"
+      ]
     }
   },
-  "include": ["src", "apps/chat-app/src", "packages/brand-config/src", "packages/ui/src", "test", "packages/brand-config/test", "vitest.config.ts", "apps/chat-app/vite.config.ts"]
+  "include": [
+    "src",
+    "apps/chat-app/src",
+    "packages/brand-config/src",
+    "packages/ui/src",
+    "test",
+    "packages/brand-config/test",
+    "vitest.config.ts",
+    "apps/chat-app/vite.config.ts"
+  ]
 }
