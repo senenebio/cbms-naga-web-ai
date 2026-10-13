@@ -6,6 +6,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import type { LLMClient, Message, SqlEngine } from '@repo/llm/types.js';
+import { BRAND } from '../brand.js';
 import { chatQuestion, createChatSession, type ChatEvent } from '../core/chat.js';
 import type { ChartSpec } from '@repo/llm/chart.js';
 
@@ -112,7 +113,7 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
       };
 
       try {
-        const session = await createChatSession(engine);
+        const session = await createChatSession(engine, BRAND.dataset);
         for await (const e of chatQuestion({
           session,
           client,

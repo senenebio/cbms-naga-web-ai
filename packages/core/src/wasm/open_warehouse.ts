@@ -15,40 +15,16 @@
  * ArrayBuffers) and in Node (bytes read from disk in the test harness).
  * Browser-compatible: no `node:` imports.
  *
- * NOTE: `DEMO_COLUMNS` / `RURAL_BARANGAYS` are also owned by the shared
- * core (`src/data.ts`, phase B); the copies here are byte-for-byte the
- * reference values and must stay in sync.
+ * The data dictionary, demo columns, and rural classification come from
+ * the brand's `Dataset` descriptor (data-aware spec D3/D7) — no local
+ * copies.
  */
-import { loadDataDictionary } from '../data.js';
+import type { Dataset } from '@workspace/brand-config';
 import { WasmSqlEngine, type WasmConnection } from './wasm_engine.js';
 
 export type TableName = 'person' | 'household' | 'barangay';
 
 export const TABLES: readonly TableName[] = ['person', 'household', 'barangay'];
-
-const dictInclude = new Map<string, boolean>();
-for (const entry of loadDataDictionary()) {
-  dictInclude.set(entry.variable_name, entry.include);
-}
-
-/**
- * Demo-only columns exposed beyond the dictionary include=true allowlist
- * (present in the parquets only when the demo scripts appended them).
- */
-const DEMO_COLUMNS: Record<string, string[]> = {
-  household: ['address', 'lat', 'lon'],
-  barangay: ['lat', 'lon'],
-};
-
-/** Urban/rural classification per barangay name (27 barangays, 6 rural). */
-const RURAL_BARANGAYS: string[] = [
-  'CARARAYAN',
-  'CAROLINA',
-  'PACOL',
-  'PANICUASON',
-  'SAN FELIPE',
-  'SAN ISIDRO',
-];
 
 /**
  * An instantiated duckdb-wasm engine (the "shared instance"): the async
@@ -66,13 +42,14 @@ export interface WarehouseHandle {
 }
 
 /** Columns of a view, in view order (same resolution as the reference). */
-function viewColumns(table: TableName, rawColumns: string[]): string[] {
+function viewColumns(table: TableName, rawColumns: string[], dataset: Dataset): string[] {
   if (table === 'barangay') {
-    const demo = (DEMO_COLUMNS['barangay'] ?? []).filter((c) => rawColumns.includes(c));
+    const demo = (dataset.demoColumns['barangay'] ?? []).filter((c) => rawColumns.includes(c));
     return ['code', 'barangay', ...demo];
   }
+  const dictInclude = new Map(dataset.dictionary.map((e) => [e.variable_name, e.include]));
   const dictCols = rawColumns.filter((c) => dictInclude.get(c) === true);
-  const demoCols = (DEMO_COLUMNS[table] ?? []).filter((c) => rawColumns.includes(c));
+  const demoCols = (dataset.demoColumns[table] ?? []).filter((c) => rawColumns.includes(c));
   return [...dictCols, ...demoCols];
 }
 
@@ -87,6 +64,7 @@ function quoteIdent(name: string): string {
 export async function openWarehouseWasm(
   db: WasmDuckDB,
   parquets: Record<TableName, ArrayBuffer>,
+  dataset: Dataset,
 ): Promise<WarehouseHandle> {
   for (const table of TABLES) {
     const bytes = parquets[table];
@@ -107,6 +85,7 @@ export async function openWarehouseWasm(
       const cols = viewColumns(
         table,
         sample.schema.names.map((name) => String(name)),
+        dataset,
       );
       if (cols.length === 0) throw new Error(`No include=true columns resolved for ${table}`);
       const list = cols.map(quoteIdent).join(', ');
@@ -117,7 +96,7 @@ export async function openWarehouseWasm(
       );
     }
 
-    const rural = RURAL_BARANGAYS.map((b) => `'${b.replace(/'/g, "''")}'`).join(', ');
+    const rural = dataset.ruralBarangays.map((b) => `'${b.replace(/'/g, "''")}'`).join(', ');
     await Promise.resolve(
       conn.query(
         `

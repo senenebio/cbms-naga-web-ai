@@ -27,8 +27,11 @@ import {
   shouldDropTileLayer,
   type BarangayFeature,
 } from '@repo/map/geo.js';
-import { isRural } from '@repo/data.js';
 import { BRAND } from '../brand.js';
+
+/** Rural classification from the brand's dataset descriptor (D7). */
+const isRural = (name: string): boolean =>
+  BRAND.dataset.ruralBarangays.includes(name.toUpperCase());
 import { resolvePalette } from './palette.js';
 import type { Theme } from '../theme.js';
 

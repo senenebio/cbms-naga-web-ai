@@ -6,6 +6,7 @@
  * `streamQuestion()` runs one turn and yields fine-grained events so the
  * web UI can render tool activity and the answer progressively.
  */
+import type { Dataset } from '@workspace/brand-config';
 import type { LLMClient, Message, SqlEngine } from './types.js';
 import { askQuestion } from './client.js';
 import type { ChartSpec } from './chart.js';
@@ -25,10 +26,11 @@ export async function systemForQuestion(
   question: string,
   fullSystem: string,
   engine: SqlEngine,
+  dataset: Dataset,
 ): Promise<string> {
-  const selected = selectColumns(question);
+  const selected = selectColumns(question, dataset);
   if (!selected) return fullSystem;
-  return buildSystemPrompt(await buildSchemaBlock(engine, selected));
+  return buildSystemPrompt(await buildSchemaBlock(engine, dataset, selected), dataset);
 }
 
 /** One event yielded by `streamQuestion()`. */

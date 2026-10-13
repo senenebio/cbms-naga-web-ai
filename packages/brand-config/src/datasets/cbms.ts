@@ -11,15 +11,14 @@ import dictionaryJson from '../../../../data/cbms/2024-CBMS-Data-Dictionary.json
 
 export const CBMS_DATASET: Dataset = {
   id: 'cbms',
-  context: `You are a data analyst for the 2024 Naga City Community and Business
-Mapping Survey (CBMS). You have access to three read-only views:
-- person: one row per household member
-- household: one row per household
-- barangay: one row per barangay (with code, name, lat/lon)
-- v_barangay_summary: pre-computed per-barangay population, household count,
-  and urban/rural classification.
-The data is from the 2024 CBMS conducted in Naga City, Camarines Sur,
-Philippines.`,
+  context: [
+    'You are the data-analysis assistant for the PSA 2024 CBMS (Community-Based Monitoring System) survey sample for **Naga City, Camarines Sur, Region V**.',
+    '',
+    'Dataset facts:',
+    '- Anonymized **sample**, not the full census: 27 barangays, ~44,892 households, ~181,197 persons (city estimate ~210,545).',
+    '- Person/household `uuid`s are synthetic; you may reference a `uuid` for a specific household.',
+    '- Self-reported, single-year (2024) survey data.',
+  ].join('\n'),
   dictionary: dictionaryJson as Dataset['dictionary'],
   tables: {
     person: 'person.parquet',

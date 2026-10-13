@@ -7,6 +7,7 @@
  * full system prompt) with a per-question system prompt and yields the
  * same `ChatEvent` stream the UI renders.
  */
+import type { Dataset } from '@workspace/brand-config';
 import { streamQuestion, systemForQuestion, type ChatEvent } from '@repo/llm/chat.js';
 import type { LLMClient, Message, SqlEngine } from '@repo/llm/types.js';
 import { buildSchemaBlock } from '@repo/schema.js';
@@ -14,9 +15,11 @@ import { buildSystemPrompt } from '@repo/llm/prompts.js';
 
 export type { ChatEvent };
 
-/** One chat session: the warehouse engine + its full system prompt. */
+/** One chat session: the warehouse engine, its dataset, and full system prompt. */
 export interface BrowserChatSession {
   engine: SqlEngine;
+  /** The brand's dataset descriptor (schema block + scoping + context). */
+  dataset: Dataset;
   /** Pre-built full system prompt (also warms the schema-block cache). */
   fullSystem: string;
 }
@@ -26,9 +29,12 @@ export interface BrowserChatSession {
  * (memoized by the shared core) so the per-question scoping (C7) has a
  * warm fallback.
  */
-export async function createChatSession(engine: SqlEngine): Promise<BrowserChatSession> {
-  const fullSystem = buildSystemPrompt(await buildSchemaBlock(engine));
-  return { engine, fullSystem };
+export async function createChatSession(
+  engine: SqlEngine,
+  dataset: Dataset,
+): Promise<BrowserChatSession> {
+  const fullSystem = buildSystemPrompt(await buildSchemaBlock(engine, dataset), dataset);
+  return { engine, dataset, fullSystem };
 }
 
 export interface ChatQuestionArgs {
@@ -49,6 +55,7 @@ export async function* chatQuestion(args: ChatQuestionArgs): AsyncGenerator<Chat
     args.question,
     args.session.fullSystem,
     args.session.engine,
+    args.session.dataset,
   );
   yield* streamQuestion({
     client: args.client,

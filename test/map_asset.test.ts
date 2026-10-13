@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as duckdb from '@duckdb/duckdb-wasm/blocking';
+import { CBMS_DATASET } from '@workspace/brand-config';
 import { openWarehouseWasm, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
 import { parseBarangayGeojson } from '@repo/map/geo.js';
 
@@ -47,7 +48,7 @@ beforeAll(async () => {
     person: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'person.parquet')),
     household: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'household.parquet')),
     barangay: toArrayBuffer(path.join(here, '..', 'data', 'cbms', 'warehouse', 'barangay.parquet')),
-  });
+  }, CBMS_DATASET);
   features = parseBarangayGeojson(
     readFileSync(path.join(here, '..', 'data', 'cbms', 'naga-barangays.geojson'), 'utf8'),
   );
