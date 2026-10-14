@@ -11,16 +11,22 @@ import { Loader2, Sparkles } from 'lucide-react';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { ChatMsg } from '../hooks/use-chat.js';
 import type { Theme } from '../theme.js';
+import { BRAND } from '../brand.js';
 import AnswerMarkdown from './AnswerMarkdown.js';
 import ChartBlock from './ChartBlock.js';
 import ResultTable from './ResultTable.js';
 import MapSection from './MapSection.js';
 import { isMapApplicable } from '@repo/map/geo.js';
-import { BRAND } from '../brand.js';
 
 
-/** "Thinking… Ns" ticker; re-renders every second until the first token. */
-function Thinking({ startedAt }: { startedAt: number }) {
+/** U3 — Phase label with elapsed seconds ticker. */
+const PHASE_LABELS: Record<string, string> = {
+  thinking: 'Thinking…',
+  querying: 'Running query…',
+  writing: 'Writing answer…',
+};
+
+function Thinking({ startedAt, phase }: { startedAt: number; phase: string }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
     const update = () => setSecs(Math.floor((Date.now() - startedAt) / 1000));
@@ -28,10 +34,83 @@ function Thinking({ startedAt }: { startedAt: number }) {
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
   }, [startedAt]);
+  const label = PHASE_LABELS[phase] ?? 'Thinking…';
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Sparkles className="size-4 animate-pulse text-primary" />
-      <span>Thinking… {secs}s</span>
+      <span>{label} {secs}s</span>
+    </div>
+  );
+}
+
+/** U5 — Loading progress bar with step labels. */
+const STEP_LABELS: Record<string, string> = {
+  fetching: 'Downloading data…',
+  wasm: 'Starting DuckDB…',
+  loading: 'Loading warehouse…',
+};
+
+function LoadingProgress({
+  progress,
+}: {
+  progress: { step: string; bytesLoaded?: number; bytesTotal?: number } | null;
+}) {
+  const step = progress?.step ?? 'fetching';
+  const label = STEP_LABELS[step] ?? 'Loading…';
+  const pct =
+    progress?.bytesLoaded && progress?.bytesTotal
+      ? Math.round((progress.bytesLoaded / progress.bytesTotal) * 100)
+      : null;
+  return (
+    <div className="flex flex-col items-center gap-2 py-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        <span>{label}</span>
+        {pct !== null && <span className="tabular-nums">{pct}%</span>}
+      </div>
+      <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-300"
+          style={{ width: pct !== null ? `${pct}%` : '30%' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** U2 — Welcome screen with demo question chips. */
+function WelcomeScreen({ onQuestion }: { onQuestion?: (q: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const questions = BRAND.dataset.demoQuestions;
+  const visible = expanded ? questions : questions.slice(0, 3);
+  const hidden = questions.length - 3;
+
+  return (
+    <div className="flex flex-col items-center gap-3 py-4">
+      <p className="text-center text-sm text-muted-foreground">{BRAND.welcomeText}</p>
+      {onQuestion && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {visible.map((q) => (
+            <button
+              key={q}
+              type="button"
+              className="rounded-full border px-3 py-1.5 text-xs text-foreground/80 hover:bg-muted"
+              onClick={() => onQuestion(q)}
+            >
+              {q.length > 60 ? q.slice(0, 60) + '…' : q}
+            </button>
+          ))}
+          {!expanded && hidden > 0 && (
+            <button
+              type="button"
+              className="rounded-full border border-dashed px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
+              onClick={() => setExpanded(true)}
+            >
+              More ({hidden})
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -43,6 +122,9 @@ export interface ChatPanelProps {
   engineError?: string | null;
   client: LLMClient | null;
   onOpenSettings: () => void;
+  onRetry?: () => void;
+  onQuestion?: (q: string) => void;
+  loadingProgress?: { step: string; bytesLoaded?: number; bytesTotal?: number } | null;
   theme?: Theme;
   showSql: boolean;
 }
@@ -54,6 +136,9 @@ export default function ChatPanel({
   engineError = null,
   client,
   onOpenSettings,
+  onRetry,
+  onQuestion,
+  loadingProgress = null,
   theme = 'light',
   showSql,
 }: ChatPanelProps) {
@@ -83,9 +168,9 @@ export default function ChatPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Feed */}
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2" ref={messagesEl}>
-        {/* Welcome text (before first message) */}
+        {/* Welcome text + demo question chips (before first message) */}
         {messages.length === 0 && !engineError && engine !== null && (
-          <p className="py-4 text-center text-sm text-muted-foreground">{BRAND.welcomeText}</p>
+          <WelcomeScreen onQuestion={onQuestion} />
         )}
 
         {engineError ? (
@@ -93,17 +178,14 @@ export default function ChatPanel({
             ⚠️ Could not load the warehouse: {engineError}
           </div>
         ) : engine === null && messages.length === 0 ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Loading the warehouse (DuckDB in your browser)...
-          </div>
+          <LoadingProgress progress={loadingProgress} />
         ) : null}
 
         {messages.map((m, i) =>
           m.role === 'user' ? (
             <div
               key={i}
-              className="ml-[12%] whitespace-pre-wrap break-words rounded-lg bg-brand-primary px-3 py-2.5 text-sm text-brand-primary-foreground"
+              className="ml-[12%] max-w-3xl whitespace-pre-wrap break-words rounded-lg bg-brand-primary px-3 py-2.5 text-sm text-brand-primary-foreground"
             >
               <span className="mb-1 block text-[11px] uppercase tracking-wide opacity-70">You</span>
               {m.content}
@@ -111,15 +193,26 @@ export default function ChatPanel({
           ) : (
             <div
               key={i}
-              className="whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2.5 text-sm"
+              className="max-w-3xl whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2.5 text-sm"
             >
               <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
                 Assistant
               </span>
               {m.error ? (
-                <div className="text-sm text-destructive">⚠️ {m.error}</div>
+                <div>
+                  <div className="text-sm text-destructive">⚠️ {m.error}</div>
+                  {onRetry && m.done && (
+                    <button
+                      type="button"
+                      className="mt-2 rounded-md border px-3 py-1 text-xs text-primary hover:bg-muted"
+                      onClick={onRetry}
+                    >
+                      Try again
+                    </button>
+                  )}
+                </div>
               ) : m.thinking ? (
-                <Thinking startedAt={m.startedAt} />
+                <Thinking startedAt={m.startedAt} phase={m.phase} />
               ) : m.text === '' ? (
                 <div className="text-xs text-muted-foreground">(no answer returned)</div>
               ) : (

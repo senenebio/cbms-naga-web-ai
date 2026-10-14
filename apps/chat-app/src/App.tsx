@@ -18,7 +18,7 @@ import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import { ChatLayout } from '@workspace/ui/components/chat-layout.js';
 import { Composer } from '@workspace/ui/components/composer.js';
 import { SettingsMenu } from '@workspace/ui/components/settings-menu.js';
-import { openWarehouseBrowser, type BrowserWarehouseHandle } from './wasm/engine.js';
+import { openWarehouseBrowser, type BrowserWarehouseHandle, type WarehouseProgress } from './wasm/engine.js';
 import {
   resolveProvider,
   type KeyValueStorage,
@@ -31,14 +31,15 @@ import { applyTheme, getInitialTheme, saveTheme, type Theme } from './theme.js';
 import { BRAND } from './brand.js';
 
 export interface AppDeps {
-  openWarehouse: () => Promise<BrowserWarehouseHandle>;
+  openWarehouse: (onProgress?: (p: WarehouseProgress) => void) => Promise<BrowserWarehouseHandle>;
   resolveProvider: () => ProviderResolution;
   /** Storage for the Settings dialog. */
   storage: KeyValueStorage;
 }
 
 const defaultDeps: AppDeps = {
-  openWarehouse: () => openWarehouseBrowser(),
+  openWarehouse: (onProgress?: (p: WarehouseProgress) => void) =>
+    openWarehouseBrowser(onProgress),
   resolveProvider: () => resolveProvider(),
   storage: localStorage,
 };
@@ -50,6 +51,7 @@ export interface AppProps {
 export default function App({ deps = defaultDeps }: AppProps) {
   const [engine, setEngine] = useState<SqlEngine | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState<WarehouseProgress | null>(null);
   const [provider, setProvider] = useState<ProviderResolution | 'init'>('init');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const warehouseRef = useRef<BrowserWarehouseHandle | null>(null);
@@ -60,7 +62,9 @@ export default function App({ deps = defaultDeps }: AppProps) {
     let handle: BrowserWarehouseHandle | null = null;
     let cancelled = false;
     deps
-      .openWarehouse()
+      .openWarehouse((p: WarehouseProgress) => {
+        if (!cancelled) setLoadingProgress(p);
+      })
       .then((h: BrowserWarehouseHandle) => {
         if (cancelled) {
           h.close();
@@ -69,10 +73,12 @@ export default function App({ deps = defaultDeps }: AppProps) {
         handle = h;
         warehouseRef.current = h;
         setEngine(h.engine);
+        setLoadingProgress(null);
       })
       .catch((e: unknown) => {
         if (cancelled) return;
         setEngineError(e instanceof Error ? e.message : String(e));
+        setLoadingProgress(null);
       });
     return () => {
       cancelled = true;
@@ -96,7 +102,7 @@ export default function App({ deps = defaultDeps }: AppProps) {
     provider === 'init' || provider.status === 'unconfigured' ? null : provider.client;
 
   // Chat logic via hook.
-  const { messages, busy, draft, setDraft, ask, newChat, stop } = useChat({
+  const { messages, busy, draft, setDraft, ask, newChat, stop, retry } = useChat({
     engine,
     client,
   });
@@ -176,6 +182,9 @@ export default function App({ deps = defaultDeps }: AppProps) {
         engineError={engineError}
         client={client}
         onOpenSettings={() => setSettingsOpen(true)}
+        onRetry={retry}
+        onQuestion={ask}
+        loadingProgress={loadingProgress}
         theme={theme}
         showSql={showSql}
       />

@@ -130,6 +130,10 @@ export function SettingsMenu({
               Dark
               {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Experimental
+            </DropdownMenuLabel>
             <DropdownMenuItem
               onSelect={() => onThemeChange('cyber')}
               className="cursor-pointer"

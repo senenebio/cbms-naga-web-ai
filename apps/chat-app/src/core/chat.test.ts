@@ -64,13 +64,15 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
       }),
     );
 
-    const types = events.map((e) => e.type);
+    // U3: phase events are yielded before sql/rows/tokens.
+    const nonPhase = events.filter((e) => e.type !== 'phase');
+    const types = nonPhase.map((e) => e.type);
     expect(types[0]).toBe('sql');
     expect(types).toEqual(['sql', 'rows', 'token', 'done']);
 
-    const sql = events[0];
+    const sql = nonPhase[0];
     expect(sql).toEqual({ type: 'sql', sql: 'SELECT code, barangay FROM "barangay" LIMIT 1' });
-    const rows = events[1];
+    const rows = nonPhase[1];
     expect(rows).toEqual({
       type: 'rows',
       columns: ['code', 'barangay'],
@@ -145,8 +147,10 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
     const events = await collect(
       chatQuestion({ session, client, history: [], question: 'chart it' }),
     );
-    expect(events.map((e) => e.type)).toEqual(['chart', 'token', 'done']);
-    expect(events[0]).toEqual({
+    // U3: phase events precede the chart/token/done events.
+    const nonPhase = events.filter((e) => e.type !== 'phase');
+    expect(nonPhase.map((e) => e.type)).toEqual(['chart', 'token', 'done']);
+    expect(nonPhase[0]).toEqual({
       type: 'chart',
       n: 1,
       spec: { type: 'bar', data: [{ name: 'A', value: 1 }], xKey: 'name', series: ['value'] },

@@ -86,7 +86,7 @@ export default function ResultTable({ columns, rows, truncated = false }: Result
           {shown.map((r, i) => (
             <tr key={i}>
               {r.map((v, j) => (
-                <td key={j} className="border px-2 py-1 whitespace-nowrap">
+                <td key={j} className="max-w-48 border break-words px-2 py-1">
                   {formatCell(v)}
                 </td>
               ))}

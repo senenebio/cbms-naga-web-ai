@@ -86,21 +86,40 @@ export class WorkerSqlEngine implements SqlEngine {
   }
 }
 
+/** U5 — Progress callback for loading state. */
+export interface WarehouseProgress {
+  step: 'fetching' | 'wasm' | 'loading';
+  /** Bytes loaded so far (fetching step only). */
+  bytesLoaded?: number;
+  /** Total bytes expected (fetching step only). */
+  bytesTotal?: number;
+}
+
 /**
  * Fetch the 3 parquets, boot the duckdb worker, and return the browser
  * `SqlEngine` over the warehouse. Rejects if any fetch or the worker init
  * fails.
  */
-export async function openWarehouseBrowser(): Promise<BrowserWarehouseHandle> {
+export async function openWarehouseBrowser(
+  onProgress?: (p: WarehouseProgress) => void,
+): Promise<BrowserWarehouseHandle> {
+  onProgress?.({ step: 'fetching' });
   const parquets: Record<TableName, ArrayBuffer> = {} as Record<TableName, ArrayBuffer>;
   await Promise.all(
     TABLES.map(async (table) => {
       const res = await fetch(`${DATA_BASE}/${table}.parquet${DATA_VERSION}`);
       if (!res.ok)
         throw new Error(`failed to fetch ${DATA_BASE}/${table}.parquet (HTTP ${res.status})`);
-      parquets[table] = await res.arrayBuffer();
+      const buf = await res.arrayBuffer();
+      parquets[table] = buf;
+      // Report cumulative bytes.
+      const loaded = Object.values(parquets).reduce((s, b) => s + b.byteLength, 0);
+      const cl = res.headers?.get('content-length');
+      const total = cl ? Number(cl) : loaded;
+      onProgress?.({ step: 'fetching', bytesLoaded: loaded, bytesTotal: total });
     }),
   );
+  onProgress?.({ step: 'wasm' });
 
   const worker = new DbWorker();
   const engine = new WorkerSqlEngine(worker);
@@ -127,6 +146,7 @@ export async function openWarehouseBrowser(): Promise<BrowserWarehouseHandle> {
     parquets: TABLES.map((table) => ({ name: table, buffer: parquets[table] })),
   };
   worker.postMessage(init, transfers);
+  onProgress?.({ step: 'loading' });
   try {
     await ready;
   } catch (e) {

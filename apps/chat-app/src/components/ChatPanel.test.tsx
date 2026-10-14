@@ -42,7 +42,7 @@ describe('ChatPanel (presentational feed)', () => {
 
   it('shows the loading note when engine is null and no messages', () => {
     renderPanel({ engine: null, client: null });
-    expect(screen.getByText(/Loading the warehouse/)).toBeInTheDocument();
+    expect(screen.getByText(/Downloading data/)).toBeInTheDocument();
   });
 
   it('renders user and assistant messages', () => {
@@ -53,6 +53,7 @@ describe('ChatPanel (presentational feed)', () => {
         text: 'There are 1,200 households.',
         thinking: false,
         startedAt: Date.now(),
+        phase: 'writing',
         sql: [],
         rows: [],
         charts: [],
@@ -73,6 +74,7 @@ describe('ChatPanel (presentational feed)', () => {
         text: '',
         thinking: false,
         startedAt: Date.now(),
+        phase: 'thinking',
         sql: [],
         rows: [],
         charts: [],
@@ -92,6 +94,7 @@ describe('ChatPanel (presentational feed)', () => {
         text: '',
         thinking: true,
         startedAt: Date.now(),
+        phase: 'thinking',
         sql: [],
         rows: [],
         charts: [],

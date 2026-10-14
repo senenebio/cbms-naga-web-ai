@@ -33,6 +33,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useMemo } from 'react';
 import type { ChartType } from '@repo/llm/chart.js';
 import { type Palette } from './palette.js';
 
@@ -59,6 +60,23 @@ export default function ChartRenderer({
   palette,
 }: ChartRendererProps) {
   const multiSeries = series.length > 1;
+
+  // U7: Pie chart guard — aggregate to top 9 + "Other" when >10 categories.
+  const PIE_MAX_SLICES = 10;
+  const pieAggregated = useMemo(() => {
+    if (type !== 'pie' || data.length <= PIE_MAX_SLICES) return null;
+    const valKey = series[0]!;
+    const sorted = [...data].sort(
+      (a, b) => (Number(b[valKey] ?? 0) - Number(a[valKey] ?? 0)),
+    );
+    const top = sorted.slice(0, PIE_MAX_SLICES - 1);
+    const rest = sorted.slice(PIE_MAX_SLICES - 1);
+    const otherValue = rest.reduce((sum, r) => sum + Number(r[valKey] ?? 0), 0);
+    const other: Record<string, string | number> = { [xKey]: 'Other', [valKey]: otherValue };
+    return { data: [...top, other], total: data.length };
+  }, [type, data, xKey, series]);
+
+  const pieData = pieAggregated ? pieAggregated.data : data;
   const tooltipStyle = {
     background: palette.panel,
     color: palette.ink,
@@ -132,22 +150,29 @@ export default function ChartRenderer({
         </ResponsiveContainer>
       )}
       {type === 'pie' && (
-        <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey={series[0]}
-              nameKey={xKey}
-              isAnimationActive={false}
-            >
-              {data.map((row, i) => (
-                <Cell key={i} fill={seriesColor(palette, i)} />
-              ))}
-            </Pie>
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        <div>
+          <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey={series[0]}
+                nameKey={xKey}
+                isAnimationActive={false}
+              >
+                {pieData.map((row, i) => (
+                  <Cell key={i} fill={seriesColor(palette, i)} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={tooltipStyle} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+          {pieAggregated && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Showing top {PIE_MAX_SLICES - 1} of {pieAggregated.total} categories. See table for all.
+            </p>
+          )}
+        </div>
       )}
       {type === 'scatter' && (
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>

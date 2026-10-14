@@ -14,6 +14,9 @@ export type SqlPart = { n: number; sql: string };
 export type RowsPart = { n: number; columns: string[]; rows: unknown[][]; truncated: boolean };
 export type ChartPart = { n: number; spec: ChartSpec };
 
+/** U3 — Phase of the in-flight turn. */
+export type TurnPhase = 'thinking' | 'querying' | 'writing';
+
 export type ChatMsg =
   | { role: 'user'; content: string }
   | {
@@ -21,6 +24,7 @@ export type ChatMsg =
       text: string;
       thinking: boolean;
       startedAt: number;
+      phase: TurnPhase;
       sql: SqlPart[];
       rows: RowsPart[];
       charts: ChartPart[];
@@ -42,6 +46,8 @@ export interface UseChatResult {
   newChat: () => void;
   /** Abort the in-flight turn (H2 — Stop button). Keeps the partial answer. */
   stop: () => void;
+  /** Re-send the last user message (U4 — "Try again" on error). */
+  retry: () => void;
 }
 
 export function useChat({ engine, client }: UseChatOptions): UseChatResult {
@@ -68,6 +74,7 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
           text: '',
           thinking: true,
           startedAt,
+          phase: 'thinking' as TurnPhase,
           sql: [],
           rows: [],
           charts: [],
@@ -98,9 +105,15 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
         } else if (e.type === 'chart') {
           const part: ChartPart = { n: e.n, spec: e.spec };
           patch((m) => (m.role === 'assistant' ? { ...m, charts: [...m.charts, part] } : m));
+        } else if (e.type === 'phase') {
+          patch((m) => (m.role === 'assistant' ? { ...m, phase: e.phase } : m));
         } else if (e.type === 'token') {
           acc += e.text;
-          patch((m) => (m.role === 'assistant' ? { ...m, thinking: false, text: acc } : m));
+          patch((m) =>
+            m.role === 'assistant'
+              ? { ...m, thinking: false, phase: 'writing' as TurnPhase, text: acc }
+              : m,
+          );
         } else if (e.type === 'done') {
           acc = e.answer;
           setHistory(e.history);
@@ -151,5 +164,34 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
     controllerRef.current?.abort();
   }, []);
 
-  return { messages, busy, draft, setDraft, ask, newChat, stop };
+  // U4 — re-send the last user message after an error.
+  const lastUserMsgRef = useRef<string>('');
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  const retry = useCallback(() => {
+    const lastUser = lastUserMsgRef.current;
+    if (!lastUser || busy) return;
+    // Remove the error assistant message, then re-ask.
+    setMessages((msgs) => {
+      const lastAsst = msgs.length - 1;
+      if (lastAsst >= 0 && msgs[lastAsst]?.role === 'assistant') {
+        return msgs.slice(0, lastAsst);
+      }
+      return msgs;
+    });
+    // Re-ask with a small delay to let state settle.
+    requestAnimationFrame(() => askRef.current(lastUser));
+  }, [busy]);
+
+  // Track last user message for retry.
+  const origAsk = ask;
+  const askWithTrack = useCallback(
+    async (question: string) => {
+      lastUserMsgRef.current = question;
+      await origAsk(question);
+    },
+    [origAsk],
+  );
+
+  return { messages, busy, draft, setDraft, ask: askWithTrack, newChat, stop, retry };
 }
