@@ -185,7 +185,7 @@ function PlainTable({ rows }: { rows: string[][] }) {
           {shown.map((row, ri) => (
             <tr key={ri}>
               {row.map((cell, ci) => (
-                <td key={ci} className="border px-2 py-1 whitespace-nowrap">
+                <td key={ci} className="max-w-48 border break-words px-2 py-1">
                   {cell}
                 </td>
               ))}

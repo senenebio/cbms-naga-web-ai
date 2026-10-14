@@ -59,7 +59,7 @@ describe('App (static, chat + settings only)', () => {
     const openWarehouse = vi.fn(async () => new Promise<BrowserWarehouseHandle>(() => {}));
     await renderApp({ openWarehouse });
     expect(screen.getByText(BRAND.name)).toBeInTheDocument();
-    expect(screen.getByText(/Loading the warehouse/)).toBeInTheDocument();
+    expect(screen.getByText(/Downloading data/)).toBeInTheDocument();
   });
 
   it('shows the unconfigured model label and the settings gear', async () => {

@@ -33,8 +33,12 @@ export async function systemForQuestion(
   return buildSystemPrompt(await buildSchemaBlock(engine, dataset, selected), dataset);
 }
 
+/** U3 — Phase of the in-flight turn. */
+export type TurnPhase = 'thinking' | 'querying' | 'writing';
+
 /** One event yielded by `streamQuestion()`. */
 export type ChatEvent =
+  | { type: 'phase'; phase: TurnPhase }
   | { type: 'sql'; sql: string }
   | { type: 'rows'; columns: string[]; rows: unknown[][]; truncated: boolean }
   | { type: 'chart'; n: number; spec: ChartSpec }
@@ -123,6 +127,11 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     yield { type: 'error', message: UNCONFIGURED_MESSAGE };
     return;
   }
+
+  // U3: Buffer phase events, yield them before the SQL/rows/charts/tokens.
+  const phases: TurnPhase[] = [];
+  const onPhase = (phase: TurnPhase) => { phases.push(phase); };
+
   let answer: string;
   let history: Message[];
   let sqlCalls: {
@@ -139,6 +148,7 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
       question: opts.question,
       execute: (sql: string) => runSelectWithFuzzyRetry(opts.engine, sql),
       signal: opts.signal,
+      onPhase,
     });
     answer = outcome.answer;
     history = outcome.history;
@@ -150,6 +160,11 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     if (e instanceof Error && e.name === 'AbortError') return;
     yield { type: 'error', message: e instanceof Error ? e.message : String(e) };
     return;
+  }
+
+  // Yield buffered phase events (U3).
+  for (const phase of phases) {
+    yield { type: 'phase', phase };
   }
 
   for (const call of sqlCalls) {

@@ -117,6 +117,8 @@ export interface AskQuestionOptions {
   maxToolRounds?: number;
   /** Optional signal to abort the turn (H2 — user Stop button). */
   signal?: AbortSignal;
+  /** U3 — Phase callback for real-time UI updates. */
+  onPhase?: (phase: 'thinking' | 'querying' | 'writing') => void;
 }
 
 /**
@@ -138,6 +140,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
 
   let rounds = 0;
   for (;;) {
+    if (rounds === 0) opts.onPhase?.('thinking');
     const resp = await opts.client.chat(messages, [runSelectToolSpec(opts.dataset), MAKE_CHART_TOOL_SPEC], opts.signal);
     if (resp.tool_calls && resp.tool_calls.length > 0) {
       rounds += 1;
@@ -175,6 +178,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
             const args = JSON.parse(tc.arguments) as { sql?: unknown };
             if (typeof args.sql !== 'string')
               throw new Error('run_select requires a "sql" string argument');
+            opts.onPhase?.('querying');
             const result = await opts.execute(args.sql);
             sqlCalls.push({ sql: args.sql, result });
             toolContent = serializeResult(result);

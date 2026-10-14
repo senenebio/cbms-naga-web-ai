@@ -235,14 +235,14 @@
 
 | Task | Title | Effort | Status |
 |------|-------|--------|--------|
-| U1 | Reading width cap (`max-w-3xl`) | S | Pending |
-| U2 | Welcome screen demo question chips | M | Pending |
-| U3 | Phase indicator + elapsed seconds | M | Pending |
-| U4 | "Try again" button on errors | S | Pending |
-| U5 | Loading progress bar (byte progress + steps) | L | Pending |
-| U6 | Table cell word-wrap (`max-w-48`) | S | Pending |
-| U7 | Pie chart category guard (>10 → bar) | S | Pending |
-| U8 | Cyber theme → Experimental section | S | Pending |
+| U1 | Reading width cap (`max-w-3xl`) | S | ✅ Done |
+| U2 | Welcome screen demo question chips | M | ✅ Done |
+| U3 | Phase indicator + elapsed seconds | M | ✅ Done |
+| U4 | "Try again" button on errors | S | ✅ Done |
+| U5 | Loading progress bar (byte progress + steps) | L | ✅ Done |
+| U6 | Table cell word-wrap (`max-w-48`) | S | ✅ Done |
+| U7 | Pie chart category guard (>10 → bar) | S | ✅ Done |
+| U8 | Cyber theme → Experimental section | S | ✅ Done |
 
 ## Suggested order
 
