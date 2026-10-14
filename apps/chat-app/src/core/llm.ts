@@ -89,7 +89,11 @@ export class FetchLlmClient implements LLMClient {
     this.temperature = opts.temperature ?? 0.7;
   }
 
-  async chat(messages: Message[], tools: ToolSpec[]): Promise<AssistantMessage> {
+  async chat(
+    messages: Message[],
+    tools: ToolSpec[],
+    signal?: AbortSignal,
+  ): Promise<AssistantMessage> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.apiKey) headers.Authorization = `Bearer ${this.apiKey}`;
 
@@ -104,8 +108,12 @@ export class FetchLlmClient implements LLMClient {
           tools,
           temperature: this.temperature,
         }),
+        signal,
       });
     } catch (e) {
+      // H2 — re-throw an abort as-is so callers can distinguish a manual
+      // Stop from a real network failure (don't wrap it in a generic error).
+      if (e instanceof Error && e.name === 'AbortError') throw e;
       throw new Error(
         `LLM request to ${this.baseUrl}/chat/completions failed: ${e instanceof Error ? e.message : String(e)}`,
       );

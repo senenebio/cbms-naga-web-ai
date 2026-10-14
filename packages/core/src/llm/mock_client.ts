@@ -223,7 +223,7 @@ function lastToolMessage(messages: Message[]): Extract<Message, { role: 'tool' }
  */
 export function createMockClient(scripts: MockScript[] = MOCK_SCRIPTS): LLMClient {
   return {
-    async chat(messages, _tools: ToolSpec[]): Promise<AssistantMessage> {
+    async chat(messages, _tools: ToolSpec[], _signal?: AbortSignal): Promise<AssistantMessage> {
       const toolMsg = lastToolMessage(messages);
       if (toolMsg) {
         // Answer turn: compose the answer from the tool result.

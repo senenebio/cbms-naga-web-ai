@@ -18,6 +18,11 @@ export interface ComposerProps {
   onChange: (value: string) => void;
   /** Called on Enter (not Shift+Enter) with a non-empty value. */
   onSubmit: () => void;
+  /**
+   * When provided (only while a turn is in flight), the send button morphs
+   * into a Stop button wired to this callback (H2, D6).
+   */
+  onStop?: () => void;
   /** Disable input + submit (e.g. while streaming). */
   disabled?: boolean;
   /** Placeholder text. */
@@ -30,6 +35,7 @@ export function Composer({
   value,
   onChange,
   onSubmit,
+  onStop,
   disabled = false,
   placeholder = 'Ask a question…',
   submitLabel = 'Send',
@@ -88,9 +94,15 @@ export function Composer({
         rows={1}
         aria-label="Message"
       />
-      <Button type="submit" disabled={disabled || value.trim() === ''}>
-        {submitLabel}
-      </Button>
+      {onStop ? (
+        <Button type="button" onClick={onStop} aria-label="Stop generating">
+          Stop
+        </Button>
+      ) : (
+        <Button type="submit" disabled={disabled || value.trim() === ''}>
+          {submitLabel}
+        </Button>
+      )}
     </form>
   );
 }

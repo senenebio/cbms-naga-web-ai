@@ -2,7 +2,8 @@
  * `testLlmConnection` probe tests (fetch mocked — no network).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { testLlmConnection } from './llm';
+import { FetchLlmClient, testLlmConnection } from './llm';
+import type { Message } from '@repo/llm/types.js';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -59,5 +60,28 @@ describe('testLlmConnection', () => {
     await expect(
       testLlmConnection({ baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'm' }),
     ).rejects.toThrow('Connection failed: CORS blocked');
+  });
+});
+
+describe('FetchLlmClient.chat (H2 — abort)', () => {
+  it('forwards the signal to fetch and re-throws an abort as AbortError', async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn(async () => {
+      const err = new Error('This operation was aborted');
+      err.name = 'AbortError';
+      throw err;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new FetchLlmClient({ model: 'm', baseUrl: 'http://x/v1' });
+    const messages: Message[] = [{ role: 'user', content: 'hi' }];
+    controller.abort();
+
+    await expect(client.chat(messages, [], controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    // The signal must be forwarded to fetch so a real request is cancellable.
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBe(controller.signal);
   });
 });

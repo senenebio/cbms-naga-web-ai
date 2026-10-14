@@ -50,6 +50,8 @@ export interface StreamQuestionOptions {
   history: Message[];
   question: string;
   engine: SqlEngine;
+  /** Optional signal to abort the turn (H2 — user Stop button). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -124,12 +126,16 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
       history: opts.history,
       question: opts.question,
       execute: (sql: string) => runSelectWithFuzzyRetry(opts.engine, sql),
+      signal: opts.signal,
     });
     answer = outcome.answer;
     history = outcome.history;
     sqlCalls = outcome.sqlCalls;
     chartCalls = outcome.chartCalls;
   } catch (e) {
+    // H2 — a manual Stop (abort) is not an error: end the turn cleanly so the
+    // partial answer is kept, rather than surfacing an "aborted" error.
+    if (e instanceof Error && e.name === 'AbortError') return;
     yield { type: 'error', message: e instanceof Error ? e.message : String(e) };
     return;
   }

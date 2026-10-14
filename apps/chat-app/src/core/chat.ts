@@ -44,6 +44,8 @@ export interface ChatQuestionArgs {
   /** Previous turns (user/assistant messages; last 6 kept by the core). */
   history: Message[];
   question: string;
+  /** Optional signal to abort the turn (H2 — user Stop button). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -63,5 +65,6 @@ export async function* chatQuestion(args: ChatQuestionArgs): AsyncGenerator<Chat
     history: args.history,
     question: args.question,
     engine: args.session.engine,
+    signal: args.signal,
   });
 }

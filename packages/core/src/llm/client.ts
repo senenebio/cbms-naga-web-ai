@@ -105,6 +105,8 @@ export interface AskQuestionOptions {
   /** Executes a run_select call; errors are reported back to the LLM as tool output. */
   execute: (sql: string) => Promise<RunSelectResult>;
   maxToolRounds?: number;
+  /** Optional signal to abort the turn (H2 — user Stop button). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -126,7 +128,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
 
   let rounds = 0;
   for (;;) {
-    const resp = await opts.client.chat(messages, [RUN_SELECT_TOOL_SPEC, MAKE_CHART_TOOL_SPEC]);
+    const resp = await opts.client.chat(messages, [RUN_SELECT_TOOL_SPEC, MAKE_CHART_TOOL_SPEC], opts.signal);
     if (resp.tool_calls && resp.tool_calls.length > 0) {
       rounds += 1;
       if (rounds > maxToolRounds) {
@@ -138,7 +140,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
             'You have reached the query limit. Stop calling tools and give your final '
             + 'answer now, using only the tool results above.',
         });
-        const forced = await opts.client.chat(messages, []);
+        const forced = await opts.client.chat(messages, [], opts.signal);
         const answer = (forced.content ?? '').trim();
         if (!answer) {
           throw new Error(`LLM exceeded ${maxToolRounds} tool rounds without a final answer`);

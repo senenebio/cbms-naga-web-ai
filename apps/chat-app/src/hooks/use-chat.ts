@@ -41,6 +41,8 @@ export interface UseChatResult {
   setDraft: (v: string) => void;
   ask: (question: string) => Promise<void>;
   newChat: () => void;
+  /** Abort the in-flight turn (H2 — Stop button). Keeps the partial answer. */
+  stop: () => void;
 }
 
 export function useChat({ engine, client }: UseChatOptions): UseChatResult {
@@ -119,6 +121,7 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
           client,
           history,
           question,
+          signal: controller.signal,
         })) {
           if (controller.signal.aborted) break;
           handleEvent(e);
@@ -143,5 +146,11 @@ export function useChat({ engine, client }: UseChatOptions): UseChatResult {
     setBusy(false);
   }, []);
 
-  return { messages, busy, draft, setDraft, ask, newChat };
+  // H2 — abort the in-flight turn without clearing the conversation; the
+  // partial answer that already streamed is kept in place (D5).
+  const stop = useCallback(() => {
+    controllerRef.current?.abort();
+  }, []);
+
+  return { messages, busy, draft, setDraft, ask, newChat, stop };
 }

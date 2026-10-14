@@ -40,7 +40,7 @@ export class StubLlm implements LLMClient {
     this.answer = opts.answer ?? '';
   }
 
-  async chat(_messages: Message[], _tools: ToolSpec[]): Promise<AssistantMessage> {
+  async chat(_messages: Message[], _tools: ToolSpec[], _signal?: AbortSignal): Promise<AssistantMessage> {
     this.calls += 1;
     if (this.calls === 1) {
       const toolCalls: ToolCall[] = [
@@ -85,7 +85,7 @@ export class ChartStubLlm implements LLMClient {
       });
   }
 
-  async chat(_messages: Message[], _tools: ToolSpec[]): Promise<AssistantMessage> {
+  async chat(_messages: Message[], _tools: ToolSpec[], _signal?: AbortSignal): Promise<AssistantMessage> {
     this.calls += 1;
     if (this.calls === 1) {
       const toolCalls: ToolCall[] = [

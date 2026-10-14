@@ -96,7 +96,7 @@ export default function App({ deps = defaultDeps }: AppProps) {
     provider === 'init' || provider.status === 'unconfigured' ? null : provider.client;
 
   // Chat logic via hook.
-  const { messages, busy, draft, setDraft, ask, newChat } = useChat({
+  const { messages, busy, draft, setDraft, ask, newChat, stop } = useChat({
     engine,
     client,
     engineError,
@@ -140,6 +140,7 @@ export default function App({ deps = defaultDeps }: AppProps) {
           value={draft}
           onChange={setDraft}
           onSubmit={() => ask(draft)}
+          onStop={busy ? stop : undefined}
           disabled={busy || !engine || client === null}
           placeholder={
             client === null ? 'Configure a model first (gear icon)…' : 'Ask a question…'
