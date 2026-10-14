@@ -8,29 +8,37 @@
  *  user question → (optional) run_select tool call(s) → final answer,
  * keeping only the last 6 history messages in context (R8).
  */
+import type { Dataset } from '@workspace/brand-config';
 import type { LLMClient, Message, ToolSpec } from './types.js';
 import { serializeResult, type RunSelectResult } from './sql_tool.js';
 import { validateChartSpec, MAKE_CHART_TOOL_SPEC, MAKE_CHART_TOOL_NAME, type ChartSpec } from './chart.js';
 
 export const RUN_SELECT_TOOL_NAME = 'run_select';
 
-export const RUN_SELECT_TOOL_SPEC: ToolSpec = {
-  type: 'function',
-  function: {
-    name: RUN_SELECT_TOOL_NAME,
-    description:
-      'Run a single read-only SELECT query against the CBMS Naga City DuckDB warehouse ' +
-      '(views: household, person, barangay, v_barangay_summary). Returns {columns, rows}, ' +
-      'capped at 100 rows / 50 KB of text.',
-    parameters: {
-      type: 'object',
-      properties: {
-        sql: { type: 'string', description: 'A single SELECT statement (no other statements).' },
+/**
+ * Builds the `run_select` tool spec with a brand-specific description.
+ * The dataset label (e.g. 'CBMS Naga 2024') is interpolated so the LLM
+ * knows which warehouse it is querying.
+ */
+export function runSelectToolSpec(dataset: Dataset): ToolSpec {
+  return {
+    type: 'function',
+    function: {
+      name: RUN_SELECT_TOOL_NAME,
+      description:
+        `Run a single read-only SELECT query against the ${dataset.label} DuckDB warehouse ` +
+        '(views: household, person, barangay, v_barangay_summary). Returns {columns, rows}, ' +
+        'capped at 100 rows / 50 KB of text.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sql: { type: 'string', description: 'A single SELECT statement (no other statements).' },
+        },
+        required: ['sql'],
       },
-      required: ['sql'],
     },
-  },
-};
+  };
+}
 
 /**
  * OpenAI chat-completions wire format for one message (a plain object —
@@ -99,12 +107,16 @@ export interface AskOutcome {
 export interface AskQuestionOptions {
   client: LLMClient;
   system: string;
+  /** Dataset descriptor (brand label for tool spec). */
+  dataset: Dataset;
   /** Previous turns (user/assistant messages). */
   history: Message[];
   question: string;
   /** Executes a run_select call; errors are reported back to the LLM as tool output. */
   execute: (sql: string) => Promise<RunSelectResult>;
   maxToolRounds?: number;
+  /** Optional signal to abort the turn (H2 — user Stop button). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -126,7 +138,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
 
   let rounds = 0;
   for (;;) {
-    const resp = await opts.client.chat(messages, [RUN_SELECT_TOOL_SPEC, MAKE_CHART_TOOL_SPEC]);
+    const resp = await opts.client.chat(messages, [runSelectToolSpec(opts.dataset), MAKE_CHART_TOOL_SPEC], opts.signal);
     if (resp.tool_calls && resp.tool_calls.length > 0) {
       rounds += 1;
       if (rounds > maxToolRounds) {
@@ -138,7 +150,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
             'You have reached the query limit. Stop calling tools and give your final '
             + 'answer now, using only the tool results above.',
         });
-        const forced = await opts.client.chat(messages, []);
+        const forced = await opts.client.chat(messages, [], opts.signal);
         const answer = (forced.content ?? '').trim();
         if (!answer) {
           throw new Error(`LLM exceeded ${maxToolRounds} tool rounds without a final answer`);

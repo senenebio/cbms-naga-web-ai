@@ -38,16 +38,16 @@ export function sanitizeAnswer(text: string): string {
  * Returns `{ callout: null }` when no headline number is present.
  */
 export function extractCallout(md: string): { callout: string | null; rest: string } {
-  // The answer may start with a `##` heading line, so scan paragraphs in
-  // order and take the first bold span containing a number.
-  for (const para of md.split(/\n\s*\n/)) {
-    const hit = [...para.matchAll(/\*\*([^*\n]+)\*\*/g)].find((m) => /\d/.test(m[1] ?? ''));
-    if (!hit) continue;
-    const start = md.indexOf(para) + (hit.index ?? 0);
-    const callout = (hit[1] ?? '').replace(/\s+/g, ' ').trim();
+  // Scan the whole text for bold spans in document order; take the first
+  // one containing a number. Using the match's absolute index (`m.index`)
+  // avoids the ambiguity of `md.indexOf(para)` for repeated paragraphs.
+  for (const m of md.matchAll(/\*\*([^*\n]+)\*\*/g)) {
+    if (!/\d/.test(m[1] ?? '')) continue;
+    const start = m.index ?? 0;
+    const callout = (m[1] ?? '').replace(/\s+/g, ' ').trim();
     // Remove only the bold span so the surrounding sentence stays intact.
     // Collapse runs of spaces/tabs only — newlines must survive (markdown structure).
-    const rest = (md.slice(0, start) + md.slice(start + (hit[0] ?? '').length))
+    const rest = (md.slice(0, start) + md.slice(start + (m[0] ?? '').length))
       .replace(/[ \t]{2,}/g, ' ')
       .trim();
     return { callout, rest };

@@ -46,10 +46,14 @@ export interface StreamQuestionOptions {
   /** Null when no LLM is configured → yields a single friendly `error` event. */
   client: LLMClient | null;
   system: string;
+  /** Dataset descriptor (brand label for tool spec). */
+  dataset: Dataset;
   /** Previous turns (user/assistant messages, last 6 kept per R8 / context-reduction C2). */
   history: Message[];
   question: string;
   engine: SqlEngine;
+  /** Optional signal to abort the turn (H2 — user Stop button). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -61,14 +65,23 @@ const NAME_COLUMNS = ['barangay', 'household_member_name'] as const;
  * Matches `column = 'value'` or `column != 'value'` on known name columns.
  * Returns the replacement SQL fragment or null if no match.
  */
-function fuzzyRetrySql(sql: string): string | null {
+/**
+ * Escapes `LIKE` metacharacters (`%`, `_`, `\`) in a user-supplied value
+ * so they are treated as literals, not wildcards.
+ */
+function escapeLike(value: string): string {
+  return value.replace(/[%_\\]/g, '\\$&');
+}
+
+export function fuzzyRetrySql(sql: string): string | null {
   for (const col of NAME_COLUMNS) {
     // Match: col = 'value' (not already UPPER/LIKE)
     const re = new RegExp(`(\\b${col}\\s*==?\\s*)('([^']+)')`, 'i');
     const m = sql.match(re);
     if (m) {
-      const value = m[3];
-      const replacement = `UPPER(${col}) LIKE UPPER('%${value}%')`;
+      const value = m[3]!;
+      const escaped = escapeLike(value);
+      const replacement = `UPPER(${col}) LIKE UPPER('%${escaped}%') ESCAPE '\\'`;
       return sql.replace(re, replacement);
     }
   }
@@ -121,15 +134,20 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     const outcome = await askQuestion({
       client: opts.client,
       system: opts.system,
+      dataset: opts.dataset,
       history: opts.history,
       question: opts.question,
       execute: (sql: string) => runSelectWithFuzzyRetry(opts.engine, sql),
+      signal: opts.signal,
     });
     answer = outcome.answer;
     history = outcome.history;
     sqlCalls = outcome.sqlCalls;
     chartCalls = outcome.chartCalls;
   } catch (e) {
+    // H2 — a manual Stop (abort) is not an error: end the turn cleanly so the
+    // partial answer is kept, rather than surfacing an "aborted" error.
+    if (e instanceof Error && e.name === 'AbortError') return;
     yield { type: 'error', message: e instanceof Error ? e.message : String(e) };
     return;
   }

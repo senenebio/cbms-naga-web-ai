@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { BRAND } from '../brand.js';
 import { chatQuestion, createChatSession } from './chat.js';
+import { fuzzyRetrySql } from '@repo/llm/chat.js';
 import type { LLMClient, Message, SqlEngine, ToolCall } from '@repo/llm/types.js';
 import { UNCONFIGURED_MESSAGE } from '@repo/llm/provider.js';
 import type { ChatEvent } from './chat.js';
@@ -25,6 +26,7 @@ class StubLlm implements LLMClient {
   async chat(
     messages: Message[],
     tools: unknown[],
+    _signal?: AbortSignal,
   ): Promise<Extract<Message, { role: 'assistant' }>> {
     const system = messages.find((m) => m.role === 'system');
     this.calls.push({ system: system && system.role === 'system' ? system.content : null, tools });
@@ -122,7 +124,7 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
   it('yields a chart event for a make_chart call (before the answer text)', async () => {
     const session = await createChatSession(stubEngine, BRAND.dataset);
     const client: LLMClient = {
-      async chat(messages: Message[], _tools: unknown[]) {
+      async chat(messages: Message[], _tools: unknown[], _signal?: AbortSignal) {
         const prior = messages.filter((m) => m.role === 'tool').length;
         if (prior === 0) {
           return {
@@ -149,5 +151,49 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
       n: 1,
       spec: { type: 'bar', data: [{ name: 'A', value: 1 }], xKey: 'name', series: ['value'] },
     });
+  });
+
+  it('ends the turn cleanly (no error event) when the signal is aborted (H2)', async () => {
+    const session = await createChatSession(stubEngine, BRAND.dataset);
+    const controller = new AbortController();
+    const client: LLMClient = {
+      async chat(_messages: Message[], _tools: unknown[], signal?: AbortSignal) {
+        if (signal?.aborted) {
+          const err = new Error('This operation was aborted');
+          err.name = 'AbortError';
+          throw err;
+        }
+        return { role: 'assistant', content: 'never reached' };
+      },
+    };
+    controller.abort();
+    const events = await collect(
+      chatQuestion({ session, client, history: [], question: 'q', signal: controller.signal }),
+    );
+    // A manual Stop is not an error: the stream ends with no events at all,
+    // so the caller keeps whatever partial answer it has already streamed.
+    expect(events).toEqual([]);
+  });
+});
+
+describe('fuzzyRetrySql', () => {
+  it('escapes LIKE wildcards in the value', () => {
+    const sql = "SELECT * FROM barangay WHERE barangay = '50%_test'";
+    const result = fuzzyRetrySql(sql);
+    expect(result).not.toBeNull();
+    expect(result).toContain("ESCAPE '\\'");
+    // % and _ are escaped with a backslash
+    expect(result).toContain('50\\%\\_test');
+  });
+
+  it('passes through values without wildcards unchanged', () => {
+    const sql = "SELECT * FROM barangay WHERE barangay = 'Naga'";
+    const result = fuzzyRetrySql(sql);
+    expect(result).not.toBeNull();
+    expect(result).toContain("UPPER(barangay) LIKE UPPER('%Naga%') ESCAPE '\\'");
+  });
+
+  it('returns null for non-name columns', () => {
+    expect(fuzzyRetrySql("SELECT * FROM household WHERE address = 'x'")).toBeNull();
   });
 });

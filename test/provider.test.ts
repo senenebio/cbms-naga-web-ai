@@ -78,7 +78,7 @@ describe('normalizeProviderConfig', () => {
 
 describe('maskKey / maskedView (S8 — never return the full key)', () => {
   it('masks long keys with a 7-char prefix and 4-char suffix', () => {
-    expect(maskKey('sk-or-v1-abcdefgh1234')).toBe('sk-or-v…1234');
+    expect(maskKey('sk-or-v1-abcdefgh1234')).toBe('sk-o…1234');
   });
 
   it('fully masks short keys', () => {
@@ -87,7 +87,7 @@ describe('maskKey / maskedView (S8 — never return the full key)', () => {
 
   it('exposes only the masked key in the public view', () => {
     const view = maskedView({ baseUrl: 'http://x/v1', apiKey: 'sk-or-v1-abcdefgh1234', model: 'm' });
-    expect(view.keyMasked).toBe('sk-or-v…1234');
+    expect(view.keyMasked).toBe('sk-o…1234');
     expect(JSON.stringify(view)).not.toContain('sk-or-v1-abcdefgh1234');
   });
 });

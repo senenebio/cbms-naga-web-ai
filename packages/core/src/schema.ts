@@ -320,7 +320,7 @@ export async function buildSchemaBlock(
     ]);
 
     const parts: string[] = [];
-    parts.push('DATA SCHEMA (DuckDB views over the anonymized 2024 PSA CBMS sample for Naga City)');
+    parts.push(`DATA SCHEMA (DuckDB views over the ${dataset.label} sample)`);
     parts.push('');
     parts.push(
       'Tables: "household" (one row per sampled household), "person" (one row per household ' +

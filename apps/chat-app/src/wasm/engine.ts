@@ -127,7 +127,14 @@ export async function openWarehouseBrowser(): Promise<BrowserWarehouseHandle> {
     parquets: TABLES.map((table) => ({ name: table, buffer: parquets[table] })),
   };
   worker.postMessage(init, transfers);
-  await ready;
+  try {
+    await ready;
+  } catch (e) {
+    // H3 — if boot fails, terminate the (heavy) worker before propagating
+    // the error; otherwise it leaks a live duckdb-wasm worker per failed open.
+    worker.terminate();
+    throw e;
+  }
 
   return {
     engine,

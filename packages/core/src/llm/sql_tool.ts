@@ -40,9 +40,25 @@ export function validateSelectOnly(sql: string): string {
   if (typeof sql !== 'string' || sql.trim() === '') {
     throw new SqlRejectedError('empty SQL statement');
   }
-  // Strip block comments, then line comments.
-  let s = sql.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  // Protect string literals and quoted identifiers from comment stripping.
+  // A `--` or `/*` inside a literal is data, not a comment.
+  const literals: string[] = [];
+  let s = sql
+    .replace(/'([^']*)'/g, (_, body: string) => {
+      literals.push(`'${body}'`);
+      return `__LIT_${literals.length - 1}__`;
+    })
+    .replace(/`[^`]*`/g, (m) => {
+      literals.push(m);
+      return `__LIT_${literals.length - 1}__`;
+    });
+
+  // Strip block comments, then line comments (safe — literals are protected).
+  s = s.replace(/\/\*[\s\S]*?\*\//g, ' ');
   s = s.replace(/--[^\n]*/g, ' ');
+
+  // Restore literals.
+  s = s.replace(/__LIT_(\d+)__/g, (_, i: string) => literals[Number(i)] ?? '');
   s = s.trim();
 
   // At most one trailing semicolon; any further semicolon means multi-statement.

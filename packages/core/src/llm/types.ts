@@ -32,7 +32,7 @@ export interface ToolSpec {
 
 /** A chat completion client. Implemented by the fetch client (prod) and mocks (tests). */
 export interface LLMClient {
-  chat(messages: Message[], tools: ToolSpec[]): Promise<AssistantMessage>;
+  chat(messages: Message[], tools: ToolSpec[], signal?: AbortSignal): Promise<AssistantMessage>;
 }
 
 /**

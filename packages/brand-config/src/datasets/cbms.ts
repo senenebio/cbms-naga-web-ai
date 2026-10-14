@@ -11,6 +11,7 @@ import dictionaryJson from '../../../../data/cbms/2024-CBMS-Data-Dictionary.json
 
 export const CBMS_DATASET: Dataset = {
   id: 'cbms',
+  label: 'CBMS Naga 2024',
   context: [
     'You are the data-analysis assistant for the PSA 2024 CBMS (Community-Based Monitoring System) survey sample for **Naga City, Camarines Sur, Region V**.',
     '',

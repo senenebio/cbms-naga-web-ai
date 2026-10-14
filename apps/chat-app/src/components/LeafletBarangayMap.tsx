@@ -199,6 +199,10 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
       tileStatsRef.current = { failed: 0, loaded: 0 };
       setTilesOffline(false);
     };
+    // Deliberate: the map is built once per data/theme. Metric/selection/
+    // palette changes are applied by the restyle effect below, not by
+    // re-running this (re-running would rebuild the map and reset zoom/pan).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fc, theme]);
 
   // Metric / selection / palette changes: restyle the existing layer in place
