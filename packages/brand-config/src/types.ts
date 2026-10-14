@@ -28,6 +28,8 @@ export interface DictEntry {
 export interface Dataset {
   /** Stable id; also the asset directory name under /data/. */
   id: string;
+  /** Short display label for the dataset (e.g. 'CBMS Naga 2024'). Used in tool specs and schema headers. */
+  label: string;
   /** Dataset context text injected into the system prompt. */
   context: string;
   /** Data-dictionary entries (the PII allowlist = include=true). */

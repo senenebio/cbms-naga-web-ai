@@ -44,6 +44,21 @@ describe('extractCallout', () => {
     const { callout } = extractCallout('**no digits** and **42 houses**');
     expect(callout).toBe('42 houses');
   });
+
+  it('extracts from the correct occurrence when a paragraph repeats', () => {
+    // Same paragraph text appears twice; the bold-number span is in the
+    // first occurrence. The fix uses `m.index` (absolute offset) so the
+    // callout is removed from the right copy, not the first.
+    const plainPara = 'The sample covers 500 households.';
+    const boldPara = 'The sample covers **500** households.';
+    const md = `${boldPara}\n\nMore text here.\n\n${plainPara}`;
+    const { callout, rest } = extractCallout(md);
+    expect(callout).toBe('500');
+    // The bold span should be removed (only one bold span existed).
+    expect(rest).not.toContain('**500**');
+    // The plain occurrence of the paragraph text survives.
+    expect(rest).toContain('The sample covers 500 households.');
+  });
 });
 
 describe('<AnswerMarkdown />', () => {

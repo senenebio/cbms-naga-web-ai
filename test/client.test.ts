@@ -7,10 +7,12 @@ import {
   askQuestion,
   toApiMessages,
   trimHistory,
-  RUN_SELECT_TOOL_SPEC,
+  runSelectToolSpec,
   RUN_SELECT_TOOL_NAME,
 } from '@repo/llm/client.js';
 import { createMockClient } from '@repo/llm/mock_client.js';
+import { MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER } from './fixtures/mock-scripts.js';
+import { CBMS_DATASET } from '@workspace/brand-config';
 import { runSelect, SqlRejectedError } from '@repo/llm/sql_tool.js';
 import type { AssistantMessage, LLMClient, Message, SqlEngine, ToolSpec } from '@repo/llm/types.js';
 
@@ -86,13 +88,15 @@ describe('trimHistory (R8 / context-reduction C2)', () => {
   });
 });
 
-describe('RUN_SELECT_TOOL_SPEC', () => {
+describe('runSelectToolSpec', () => {
   it('describes the single read-only run_select tool', () => {
-    expect(RUN_SELECT_TOOL_SPEC.function.name).toBe(RUN_SELECT_TOOL_NAME);
-    expect(RUN_SELECT_TOOL_SPEC.function.parameters.properties).toEqual({
+    const spec = runSelectToolSpec(CBMS_DATASET);
+    expect(spec.function.name).toBe(RUN_SELECT_TOOL_NAME);
+    expect(spec.function.parameters.properties).toEqual({
       sql: { type: 'string', description: 'A single SELECT statement (no other statements).' },
     });
-    expect(RUN_SELECT_TOOL_SPEC.function.parameters.required).toEqual(['sql']);
+    expect(spec.function.parameters.required).toEqual(['sql']);
+    expect(spec.function.description).toContain(CBMS_DATASET.label);
   });
 });
 
@@ -100,8 +104,9 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
   it('runs the scripted SQL through execute and composes the answer', async () => {
     const executed: string[] = [];
     const outcome = await askQuestion({
-      client: createMockClient(),
+      client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'How many households and people were surveyed in Naga City?',
       execute: async (sql: string) => {
@@ -124,8 +129,9 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
       content: `h${i}`,
     }));
     const outcome = await askQuestion({
-      client: createMockClient(),
+      client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
+      dataset: CBMS_DATASET,
       history,
       question: 'How many households and people were surveyed in Naga City?',
       execute: (sql: string) => runSelect(makeEngine(), sql),
@@ -137,8 +143,9 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
 
   it('reports execute errors back to the LLM as tool output', async () => {
     const outcome = await askQuestion({
-      client: createMockClient(),
+      client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'How many households and people were surveyed in Naga City?',
       execute: () => Promise.reject(new SqlRejectedError('boom')),
@@ -148,8 +155,9 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
 
   it('records nothing when the mock declines (no scripted question)', async () => {
     const outcome = await askQuestion({
-      client: createMockClient(),
+      client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'What is the capital of France?',
       execute: async () => {
@@ -178,6 +186,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
     const outcome = await askQuestion({
       client,
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'q',
       execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),
@@ -212,6 +221,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
       askQuestion({
         client,
         system: 'system',
+        dataset: CBMS_DATASET,
         history: [],
         question: 'q',
         execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),
@@ -247,6 +257,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
     const outcome = await askQuestion({
       client,
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'chart it',
       execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),
@@ -285,6 +296,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
     const outcome = await askQuestion({
       client,
       system: 'system',
+      dataset: CBMS_DATASET,
       history: [],
       question: 'chart it',
       execute: async () => ({ columns: ['x'], rows: [[1]], truncated: false }),

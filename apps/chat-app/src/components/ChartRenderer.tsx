@@ -141,7 +141,7 @@ export default function ChartRenderer({
               isAnimationActive={false}
             >
               {data.map((row, i) => (
-                <Cell key={String(row[xKey])} fill={seriesColor(palette, i)} />
+                <Cell key={i} fill={seriesColor(palette, i)} />
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} />

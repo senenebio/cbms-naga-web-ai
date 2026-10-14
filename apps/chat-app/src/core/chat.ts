@@ -62,6 +62,7 @@ export async function* chatQuestion(args: ChatQuestionArgs): AsyncGenerator<Chat
   yield* streamQuestion({
     client: args.client,
     system,
+    dataset: args.session.dataset,
     history: args.history,
     question: args.question,
     engine: args.session.engine,

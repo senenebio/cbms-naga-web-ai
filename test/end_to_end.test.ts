@@ -22,7 +22,8 @@ import { CBMS_DATASET } from '@workspace/brand-config';
 import { openWarehouseWasm, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
 import type { Message, SqlEngine } from '@repo/llm/types.js';
 import { askQuestion, type AskOutcome } from '@repo/llm/client.js';
-import { createMockClient, MOCK_SCRIPTS } from '@repo/llm/mock_client.js';
+import { createMockClient } from '@repo/llm/mock_client.js';
+import { MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER } from './fixtures/mock-scripts.js';
 import { runSelect, validateSelectOnly } from '@repo/llm/sql_tool.js';
 import { buildSchemaBlock } from '@repo/schema.js';
 import { buildSystemPrompt } from '@repo/llm/prompts.js';
@@ -86,10 +87,11 @@ describe('E2E: mock LLM + real WASM warehouse through askQuestion', () => {
     expect(expected).toBeDefined();
     const script = expected as (typeof MOCK_SCRIPTS)[number];
 
-    const client = createMockClient();
+    const client = createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER);
     const outcome: AskOutcome = await askQuestion({
       client,
       system,
+      dataset: CBMS_DATASET,
       history: [],
       question: QUESTION,
       execute: (sql: string) => runSelect(engine as SqlEngine, sql),

@@ -83,6 +83,14 @@ describe('validateSelectOnly (R5)', () => {
     it('strips comments before validating', () => {
       expect(validateSelectOnly('-- comment\nSELECT 1 /* block */')).toBe('SELECT 1');
     });
+
+    it('accepts comment markers inside string literals (L2)', () => {
+      // `--` and `/*` inside a literal are data, not comments.
+      const result = validateSelectOnly(`SELECT 'a -- b' AS x`);
+      expect(result).toContain("'a -- b'");
+      const result2 = validateSelectOnly(`SELECT 'a /* b */' AS x`);
+      expect(result2).toContain("'a /* b */'");
+    });
   });
 });
 

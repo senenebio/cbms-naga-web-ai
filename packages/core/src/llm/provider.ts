@@ -72,10 +72,10 @@ export function normalizeProviderConfig(input: unknown): ResolvedLlmConfig {
   return { baseUrl, apiKey, model };
 }
 
-/** Mask a key for display: `sk-or-v1-abc…wxyz`. Never returns the full key. */
+/** Mask a key for display: `sk-o…wxyz`. Never returns the full key. */
 export function maskKey(key: string): string {
   if (key.length <= 8) return '****';
-  return `${key.slice(0, 7)}…${key.slice(-4)}`;
+  return `${key.slice(0, 4)}…${key.slice(-4)}`;
 }
 
 export function maskedView(cfg: ResolvedLlmConfig): MaskedProviderConfig {

@@ -31,7 +31,6 @@ export type ChatMsg =
 export interface UseChatOptions {
   engine: SqlEngine | null;
   client: LLMClient | null;
-  engineError?: string | null;
 }
 
 export interface UseChatResult {

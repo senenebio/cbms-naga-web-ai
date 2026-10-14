@@ -7,7 +7,7 @@
  * `messages`, `busy`, etc. come from the `useChat` hook (in App).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import type { LLMClient, SqlEngine } from '@repo/llm/types.js';
 import type { ChatMsg } from '../hooks/use-chat.js';
 import type { Theme } from '../theme.js';
@@ -93,8 +93,9 @@ export default function ChatPanel({
             ⚠️ Could not load the warehouse: {engineError}
           </div>
         ) : engine === null && messages.length === 0 ? (
-          <div className="text-xs text-muted-foreground">
-            Loading the warehouse (DuckDB in your browser)…
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Loading the warehouse (DuckDB in your browser)...
           </div>
         ) : null}
 

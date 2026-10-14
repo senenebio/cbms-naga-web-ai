@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { BRAND } from '../brand.js';
 import { chatQuestion, createChatSession } from './chat.js';
+import { fuzzyRetrySql } from '@repo/llm/chat.js';
 import type { LLMClient, Message, SqlEngine, ToolCall } from '@repo/llm/types.js';
 import { UNCONFIGURED_MESSAGE } from '@repo/llm/provider.js';
 import type { ChatEvent } from './chat.js';
@@ -172,5 +173,27 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
     // A manual Stop is not an error: the stream ends with no events at all,
     // so the caller keeps whatever partial answer it has already streamed.
     expect(events).toEqual([]);
+  });
+});
+
+describe('fuzzyRetrySql', () => {
+  it('escapes LIKE wildcards in the value', () => {
+    const sql = "SELECT * FROM barangay WHERE barangay = '50%_test'";
+    const result = fuzzyRetrySql(sql);
+    expect(result).not.toBeNull();
+    expect(result).toContain("ESCAPE '\\'");
+    // % and _ are escaped with a backslash
+    expect(result).toContain('50\\%\\_test');
+  });
+
+  it('passes through values without wildcards unchanged', () => {
+    const sql = "SELECT * FROM barangay WHERE barangay = 'Naga'";
+    const result = fuzzyRetrySql(sql);
+    expect(result).not.toBeNull();
+    expect(result).toContain("UPPER(barangay) LIKE UPPER('%Naga%') ESCAPE '\\'");
+  });
+
+  it('returns null for non-name columns', () => {
+    expect(fuzzyRetrySql("SELECT * FROM household WHERE address = 'x'")).toBeNull();
   });
 });

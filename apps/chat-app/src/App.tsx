@@ -99,7 +99,6 @@ export default function App({ deps = defaultDeps }: AppProps) {
   const { messages, busy, draft, setDraft, ask, newChat, stop } = useChat({
     engine,
     client,
-    engineError,
   });
 
   // Show SQL toggle (persisted).
