@@ -128,19 +128,10 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
     return;
   }
 
-  // U3: Buffer phase events, yield them before the SQL/rows/charts/tokens.
-  const phases: TurnPhase[] = [];
-  const onPhase = (phase: TurnPhase) => { phases.push(phase); };
-
-  let answer: string;
-  let history: Message[];
-  let sqlCalls: {
-    sql: string;
-    result: { columns: string[]; rows: unknown[][]; truncated: boolean };
-  }[];
-  let chartCalls: ChartSpec[];
+  let answer = '';
+  let history: Message[] = [];
   try {
-    const outcome = await askQuestion({
+    for await (const e of askQuestion({
       client: opts.client,
       system: opts.system,
       dataset: opts.dataset,
@@ -148,38 +139,21 @@ export async function* streamQuestion(opts: StreamQuestionOptions): AsyncGenerat
       question: opts.question,
       execute: (sql: string) => runSelectWithFuzzyRetry(opts.engine, sql),
       signal: opts.signal,
-      onPhase,
-    });
-    answer = outcome.answer;
-    history = outcome.history;
-    sqlCalls = outcome.sqlCalls;
-    chartCalls = outcome.chartCalls;
+    })) {
+      if (e.type === 'answer') {
+        answer = e.answer;
+        history = e.history;
+      } else {
+        // phase / sql / rows / chart — stream them live as the turn progresses.
+        yield e;
+      }
+    }
   } catch (e) {
     // H2 — a manual Stop (abort) is not an error: end the turn cleanly so the
     // partial answer is kept, rather than surfacing an "aborted" error.
     if (e instanceof Error && e.name === 'AbortError') return;
     yield { type: 'error', message: e instanceof Error ? e.message : String(e) };
     return;
-  }
-
-  // Yield buffered phase events (U3).
-  for (const phase of phases) {
-    yield { type: 'phase', phase };
-  }
-
-  for (const call of sqlCalls) {
-    yield { type: 'sql', sql: call.sql };
-    yield {
-      type: 'rows',
-      columns: call.result.columns,
-      rows: call.result.rows,
-      truncated: call.result.truncated,
-    };
-  }
-
-  // Charts come after the SQL/rows activity and before the answer text (C5).
-  for (let i = 0; i < chartCalls.length; i++) {
-    yield { type: 'chart', n: i + 1, spec: chartCalls[i]! };
   }
 
   // Stream the answer in small chunks so the client renders it progressively.

@@ -8,7 +8,7 @@
  * wiring. Leaflet rendering itself is verified manually (spec P4 gate).
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 // Leaflet is mocked out: no real map tiles in tests. The mock returns just
 // enough of the Leaflet object graph for the component's init effect to run
@@ -45,6 +45,14 @@ vi.mock('leaflet', () => {
 import LeafletBarangayMap from './LeafletBarangayMap';
 import MapSection from './MapSection';
 
+// jsdom lacks ResizeObserver; the map registers one to re-rasterize on
+// container resize. Provide a no-op mock so the init effect can register it.
+globalThis.ResizeObserver = vi.fn(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+
 /** A 27-feature fixture GeoJSON (simple unit squares, codes "1".."27"). */
 function fixtureGeo(n = 27): string {
   const features = Array.from({ length: n }, (_, i) => ({
@@ -75,9 +83,19 @@ describe('<LeafletBarangayMap />', () => {
     ];
     render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
     await waitFor(() => expect(screen.getByText('Metric:')).toBeInTheDocument());
-    // The select offers both numeric columns.
-    const select = screen.getByRole('combobox');
+    // The metric select (labeled "Metric:") offers both numeric columns.
+    const select = screen.getByLabelText('Metric:');
     expect(select).toBeInTheDocument();
+  });
+
+  it('shows a basemap selector with OpenStreetMap and OpenTopoMap', async () => {
+    const columns = ['code', 'barangay', 'hh'];
+    const rows: unknown[][] = [[1, 'BQ 1', 100]];
+    render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
+    const select = screen.getByLabelText('Basemap:');
+    expect(select).toBeInTheDocument();
+    expect(within(select).getByRole('option', { name: 'OpenStreetMap' })).toBeInTheDocument();
+    expect(within(select).getByRole('option', { name: 'OpenTopoMap' })).toBeInTheDocument();
   });
 
   it('renders without a metric selector for a single numeric column', async () => {
@@ -106,7 +124,7 @@ describe('<LeafletBarangayMap />', () => {
     await waitFor(() =>
       expect(screen.getByText(/OpenStreetMap contributors/)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/OSSPhilippines/)).toBeInTheDocument();
+    expect(screen.getByText(/faeldon\/philippines-json-maps/)).toBeInTheDocument();
   });
 
   it('renders "Map unavailable." for malformed GeoJSON', async () => {

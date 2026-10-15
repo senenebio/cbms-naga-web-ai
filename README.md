@@ -72,7 +72,7 @@ Drop the `dist/` folder on any static host:
 
 ```bash
 pnpm dev         # Vite dev server
-pnpm test        # 205 tests (vitest)
+pnpm test        # 216 tests (vitest)
 pnpm typecheck   # TypeScript
 pnpm lint        # ESLint
 ```

@@ -21,7 +21,7 @@ import * as duckdb from '@duckdb/duckdb-wasm/blocking';
 import { CBMS_DATASET } from '@workspace/brand-config';
 import { openWarehouseWasm, type WarehouseHandle } from '@repo/wasm/open_warehouse.js';
 import type { Message, SqlEngine } from '@repo/llm/types.js';
-import { askQuestion, type AskOutcome } from '@repo/llm/client.js';
+import { askQuestion, type AskEvent } from '@repo/llm/client.js';
 import { createMockClient } from '@repo/llm/mock_client.js';
 import { MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER } from './fixtures/mock-scripts.js';
 import { runSelect, validateSelectOnly } from '@repo/llm/sql_tool.js';
@@ -38,6 +38,35 @@ const QUESTION = 'What is the average household size in urban vs. rural barangay
 function toArrayBuffer(file: string): ArrayBuffer {
   const buf = readFileSync(file);
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+}
+
+/**
+ * Consume the `askQuestion` generator and fold the real-time events back into
+ * the aggregate shape the test asserts on (`answer`, `history`, `sqlCalls`).
+ * Each SQL call yields a `sql` event followed by its `rows` event; paired by
+ * index.
+ */
+async function runQuestion(opts: Parameters<typeof askQuestion>[0]) {
+  const events: AskEvent[] = [];
+  for await (const e of askQuestion(opts)) events.push(e);
+  const answerEvent = events.find((e) => e.type === 'answer');
+  const sqlEvents = events.filter((e) => e.type === 'sql');
+  const rowEvents = events.filter((e) => e.type === 'rows');
+  return {
+    answer: answerEvent?.type === 'answer' ? answerEvent.answer : '',
+    history: (answerEvent?.type === 'answer' ? answerEvent.history : []) as Message[],
+    sqlCalls: sqlEvents.map((e, i) => {
+      const row = rowEvents[i] as
+        | { columns: string[]; rows: unknown[][]; truncated: boolean }
+        | undefined;
+      return {
+        sql: e.type === 'sql' ? e.sql : '',
+        result: row
+          ? { columns: row.columns, rows: row.rows, truncated: row.truncated }
+          : { columns: [], rows: [], truncated: false },
+      };
+    }),
+  };
 }
 
 let wh: WarehouseHandle | null = null;
@@ -88,7 +117,7 @@ describe('E2E: mock LLM + real WASM warehouse through askQuestion', () => {
     const script = expected as (typeof MOCK_SCRIPTS)[number];
 
     const client = createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER);
-    const outcome: AskOutcome = await askQuestion({
+    const outcome = await runQuestion({
       client,
       system,
       dataset: CBMS_DATASET,

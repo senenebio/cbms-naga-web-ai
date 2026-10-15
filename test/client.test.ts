@@ -9,11 +9,13 @@ import {
   trimHistory,
   runSelectToolSpec,
   RUN_SELECT_TOOL_NAME,
+  type AskEvent,
 } from '@repo/llm/client.js';
 import { createMockClient } from '@repo/llm/mock_client.js';
 import { MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER } from './fixtures/mock-scripts.js';
 import { CBMS_DATASET } from '@workspace/brand-config';
 import { runSelect, SqlRejectedError } from '@repo/llm/sql_tool.js';
+import type { ChartSpec } from '@repo/llm/chart.js';
 import type { AssistantMessage, LLMClient, Message, SqlEngine, ToolSpec } from '@repo/llm/types.js';
 
 const TOTALS_SQL = `SELECT (SELECT COUNT(*) AS households FROM "household") AS households, (SELECT COUNT(*) AS persons FROM "person") AS persons`;
@@ -28,6 +30,38 @@ function makeEngine(): SqlEngine {
       }
       return { columns: [], rows: [] };
     },
+  };
+}
+
+/**
+ * Consume the `askQuestion` generator and fold the real-time events back into
+ * the aggregate shape the tests assert on (`answer`, `history`, `sqlCalls`,
+ * `chartCalls`). Each SQL call yields a `sql` event followed by its `rows`
+ * event; they are paired by index.
+ */
+async function runQuestion(opts: Parameters<typeof askQuestion>[0]) {
+  const events: AskEvent[] = [];
+  for await (const e of askQuestion(opts)) events.push(e);
+  const answerEvent = events.find((e) => e.type === 'answer');
+  const sqlEvents = events.filter((e) => e.type === 'sql');
+  const rowEvents = events.filter((e) => e.type === 'rows');
+  return {
+    answer: answerEvent?.type === 'answer' ? answerEvent.answer : '',
+    history: (answerEvent?.type === 'answer' ? answerEvent.history : []) as Message[],
+    sqlCalls: sqlEvents.map((e, i) => {
+      const row = rowEvents[i] as
+        | { columns: string[]; rows: unknown[][]; truncated: boolean }
+        | undefined;
+      return {
+        sql: e.type === 'sql' ? e.sql : '',
+        result: row
+          ? { columns: row.columns, rows: row.rows, truncated: row.truncated }
+          : { columns: [], rows: [], truncated: false },
+      };
+    }),
+    chartCalls: events.filter((e) => e.type === 'chart').map((e) =>
+      e.type === 'chart' ? e.spec : (null as unknown as ChartSpec),
+    ),
   };
 }
 
@@ -103,7 +137,7 @@ describe('runSelectToolSpec', () => {
 describe('askQuestion tool loop (mock client + fake engine)', () => {
   it('runs the scripted SQL through execute and composes the answer', async () => {
     const executed: string[] = [];
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
       dataset: CBMS_DATASET,
@@ -123,12 +157,35 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
     expect(outcome.history).toHaveLength(2);
   });
 
+  it('yields phase events in real time (thinking → querying) before the answer', async () => {
+    const events: AskEvent[] = [];
+    for await (const e of askQuestion({
+      client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
+      system: 'system',
+      dataset: CBMS_DATASET,
+      history: [],
+      question: 'How many households and people were surveyed in Naga City?',
+      execute: (sql: string) => runSelect(makeEngine(), sql),
+    })) {
+      events.push(e);
+    }
+    const phases = events
+      .filter((e) => e.type === 'phase')
+      .map((e) => (e.type === 'phase' ? e.phase : ''));
+    expect(phases).toEqual(['thinking', 'querying']);
+    // Every phase precedes the answer event (real-time, not a post-hoc recap).
+    const answerIndex = events.findIndex((e) => e.type === 'answer');
+    const lastPhaseIndex = events.map((e) => e.type).lastIndexOf('phase');
+    expect(lastPhaseIndex).toBeGreaterThanOrEqual(0);
+    expect(lastPhaseIndex).toBeLessThan(answerIndex);
+  });
+
   it('caps history at the last 6 messages (R8)', async () => {
     const history: Message[] = Array.from({ length: 8 }, (_, i) => ({
       role: i % 2 === 0 ? 'user' : 'assistant',
       content: `h${i}`,
     }));
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
       dataset: CBMS_DATASET,
@@ -142,7 +199,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
   });
 
   it('reports execute errors back to the LLM as tool output', async () => {
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
       dataset: CBMS_DATASET,
@@ -154,7 +211,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
   });
 
   it('records nothing when the mock declines (no scripted question)', async () => {
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client: createMockClient(MOCK_SCRIPTS, FALLBACK_ANSWER, OFF_TOPIC_ANSWER),
       system: 'system',
       dataset: CBMS_DATASET,
@@ -183,7 +240,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
         };
       },
     };
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client,
       system: 'system',
       dataset: CBMS_DATASET,
@@ -218,7 +275,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
       },
     };
     await expect(
-      askQuestion({
+      runQuestion({
         client,
         system: 'system',
         dataset: CBMS_DATASET,
@@ -254,7 +311,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
         return { role: 'assistant', content: 'Final answer with a chart.' };
       },
     };
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client,
       system: 'system',
       dataset: CBMS_DATASET,
@@ -293,7 +350,7 @@ describe('askQuestion tool loop (mock client + fake engine)', () => {
         return { role: 'assistant', content: 'Final answer after the bad chart.' };
       },
     };
-    const outcome = await askQuestion({
+    const outcome = await runQuestion({
       client,
       system: 'system',
       dataset: CBMS_DATASET,

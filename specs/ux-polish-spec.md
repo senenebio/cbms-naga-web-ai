@@ -1,6 +1,6 @@
 # UX Polish Spec
 
-**Status:** PLANNED
+**Status:** Done (2026-10-15) — all items U1–U8 complete (see task table)
 **Branch:** (TBD)
 **Parent spec:** `code-review-fixes-spec.md` (all items Done/Deferred)
 
@@ -10,7 +10,7 @@
 
 | # | Decision | Choice |
 |---|----------|--------|
-| D1 | Reading width cap | `max-w-3xl` (768px) on answer bubbles |
+| D1 | Reading width cap | `max-w-3xl` (768px) on answer bubbles — **superseded** by responsive `w-[88%]`, see `post-ux-polish-fixes-spec.md` P1 |
 | D2 | Welcome screen | 3 demo question chips + "More" expandable for the rest |
 | D3 | Thinking indicator | 3 phases (Thinking / Running query / Writing answer) + elapsed seconds |
 | D4 | Error retry | "Try again" button re-sends last user message |

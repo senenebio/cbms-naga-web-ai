@@ -174,9 +174,11 @@ describe('core/chat.ts (stub engine + stub LLM)', () => {
     const events = await collect(
       chatQuestion({ session, client, history: [], question: 'q', signal: controller.signal }),
     );
-    // A manual Stop is not an error: the stream ends with no events at all,
-    // so the caller keeps whatever partial answer it has already streamed.
-    expect(events).toEqual([]);
+    // A manual Stop is not an error: no `error` event is yielded and the turn
+    // ends before the answer (`done`). The stream may already have emitted a
+    // `phase: thinking` event before the abort took effect.
+    expect(events.filter((e) => e.type === 'error')).toEqual([]);
+    expect(events.filter((e) => e.type === 'done')).toEqual([]);
   });
 });
 

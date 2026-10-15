@@ -185,7 +185,7 @@ export default function ChatPanel({
           m.role === 'user' ? (
             <div
               key={i}
-              className="ml-[12%] max-w-3xl whitespace-pre-wrap break-words rounded-lg bg-brand-primary px-3 py-2.5 text-sm text-brand-primary-foreground"
+              className="ml-[12%] w-[88%] whitespace-pre-wrap break-words rounded-lg bg-brand-primary px-3 py-2.5 text-sm text-brand-primary-foreground"
             >
               <span className="mb-1 block text-[11px] uppercase tracking-wide opacity-70">You</span>
               {m.content}
@@ -193,7 +193,7 @@ export default function ChatPanel({
           ) : (
             <div
               key={i}
-              className="max-w-3xl whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2.5 text-sm"
+              className="w-[88%] whitespace-pre-wrap break-words rounded-lg bg-muted px-3 py-2.5 text-sm"
             >
               <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
                 Assistant
