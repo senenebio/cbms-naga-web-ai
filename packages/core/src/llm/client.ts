@@ -90,19 +90,17 @@ export function trimHistory(history: Message[], max = 6): Message[] {
   return history.slice(-max);
 }
 
-export interface SqlCallRecord {
-  sql: string;
-  result: RunSelectResult;
-}
-
-export interface AskOutcome {
-  answer: string;
-  /** Updated conversation history (last 6 messages, R8 / context-reduction C2). */
-  history: Message[];
-  sqlCalls: SqlCallRecord[];
-  /** Charts requested via make_chart, in creation order. */
-  chartCalls: ChartSpec[];
-}
+/**
+ * Events `askQuestion` yields in real time as the turn progresses (U3):
+ * phase changes, each executed SQL + its rows, each requested chart, and the
+ * final `{ answer, history }`.
+ */
+export type AskEvent =
+  | { type: 'phase'; phase: 'thinking' | 'querying' | 'writing' }
+  | { type: 'sql'; sql: string }
+  | { type: 'rows'; columns: string[]; rows: unknown[][]; truncated: boolean }
+  | { type: 'chart'; n: number; spec: ChartSpec }
+  | { type: 'answer'; answer: string; history: Message[] };
 
 export interface AskQuestionOptions {
   client: LLMClient;
@@ -117,17 +115,16 @@ export interface AskQuestionOptions {
   maxToolRounds?: number;
   /** Optional signal to abort the turn (H2 — user Stop button). */
   signal?: AbortSignal;
-  /** U3 — Phase callback for real-time UI updates. */
-  onPhase?: (phase: 'thinking' | 'querying' | 'writing') => void;
 }
 
 /**
- * Runs one user turn through the LLM + tool loop and returns the final
- * answer plus every SQL that was executed.
+ * Runs one user turn through the LLM + tool loop, yielding `AskEvent`s in
+ * real time as the turn progresses (phase changes, each executed SQL + its
+ * rows, each requested chart) and yielding the final `{ answer, history }`.
  * Each tool round re-sends the full system prompt plus all prior tool
  * results, so the cap is kept low (4, context-reduction spec C3).
  */
-export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome> {
+export async function* askQuestion(opts: AskQuestionOptions): AsyncGenerator<AskEvent> {
   const maxToolRounds = opts.maxToolRounds ?? 4;
   const userMsg: Message = { role: 'user', content: opts.question };
   const messages: Message[] = [
@@ -135,12 +132,11 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
     ...trimHistory(opts.history),
     userMsg,
   ];
-  const sqlCalls: SqlCallRecord[] = [];
-  const chartCalls: ChartSpec[] = [];
+  let chartN = 0;
 
   let rounds = 0;
   for (;;) {
-    if (rounds === 0) opts.onPhase?.('thinking');
+    if (rounds === 0) yield { type: 'phase', phase: 'thinking' };
     const resp = await opts.client.chat(messages, [runSelectToolSpec(opts.dataset), MAKE_CHART_TOOL_SPEC], opts.signal);
     if (resp.tool_calls && resp.tool_calls.length > 0) {
       rounds += 1;
@@ -159,7 +155,8 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
           throw new Error(`LLM exceeded ${maxToolRounds} tool rounds without a final answer`);
         }
         const history: Message[] = [...opts.history, userMsg, forced].slice(-6);
-        return { answer, history, sqlCalls, chartCalls };
+        yield { type: 'answer', answer, history };
+        return;
       }
       messages.push(resp);
       for (const tc of resp.tool_calls) {
@@ -168,8 +165,9 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
           try {
             const args = JSON.parse(tc.arguments) as Record<string, unknown>;
             const spec = validateChartSpec(args);
-            chartCalls.push(spec);
-            toolContent = JSON.stringify({ status: 'ok', chart_id: chartCalls.length });
+            chartN += 1;
+            yield { type: 'chart', n: chartN, spec };
+            toolContent = JSON.stringify({ status: 'ok', chart_id: chartN });
           } catch (e) {
             toolContent = JSON.stringify({ error: e instanceof Error ? e.message : String(e) });
           }
@@ -178,9 +176,15 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
             const args = JSON.parse(tc.arguments) as { sql?: unknown };
             if (typeof args.sql !== 'string')
               throw new Error('run_select requires a "sql" string argument');
-            opts.onPhase?.('querying');
+            yield { type: 'phase', phase: 'querying' };
             const result = await opts.execute(args.sql);
-            sqlCalls.push({ sql: args.sql, result });
+            yield { type: 'sql', sql: args.sql };
+            yield {
+              type: 'rows',
+              columns: result.columns,
+              rows: result.rows,
+              truncated: result.truncated,
+            };
             toolContent = serializeResult(result);
           } catch (e) {
             toolContent = JSON.stringify({ error: e instanceof Error ? e.message : String(e) });
@@ -194,6 +198,7 @@ export async function askQuestion(opts: AskQuestionOptions): Promise<AskOutcome>
     }
     const answer = resp.content ?? '';
     const history: Message[] = [...opts.history, userMsg, resp].slice(-6);
-    return { answer, history, sqlCalls, chartCalls };
+    yield { type: 'answer', answer, history };
+    return;
   }
 }

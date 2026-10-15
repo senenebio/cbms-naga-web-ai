@@ -36,7 +36,50 @@ import { resolvePalette } from './palette.js';
 import type { Theme } from '../theme.js';
 
 const GEO_URL = `/data/${BRAND.dataset.id}/${BRAND.dataset.geojson}?v=${__DATA_VERSION__}`;
-const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+/**
+ * Basemap options. Both are open (OpenStreetMap data); OpenTopoMap is a
+ * volunteer-run server, so we cap its zoom to be a good citizen.
+ */
+type BasemapId = 'osm' | 'opentopo';
+const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: string; maxZoom: number }> = {
+  osm: {
+    label: 'OpenStreetMap',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+  opentopo: {
+    label: 'OpenTopoMap',
+    url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, SRTM | © OpenTopoMap (CC-BY-SA)',
+    maxZoom: 17,
+  },
+};
+
+/** Create a basemap tile layer with the shared offline-fallback behavior. */
+function addTileLayer(
+  map: L.Map,
+  id: BasemapId,
+  stats: { failed: number; loaded: number },
+  onOffline: () => void,
+): L.TileLayer {
+  const b = BASEMAPS[id];
+  const tile = L.tileLayer(b.url, { attribution: b.attribution, maxZoom: b.maxZoom }).addTo(map);
+  tile.on('tileload', () => {
+    stats.loaded += 1;
+  });
+  tile.on('tileerror', () => {
+    stats.failed += 1;
+    if (shouldDropTileLayer(stats.failed, stats.loaded)) {
+      tile.off();
+      map.removeLayer(tile);
+      onOffline();
+    }
+  });
+  return tile;
+}
+
 /** Subtle stroke opacity so basemap shows through the borders (fill is adjustable). */
 const STROKE_OPACITY = 0.6;
 
@@ -72,8 +115,12 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
   const [valueCol, setValueCol] = useState('');
   const [tilesOffline, setTilesOffline] = useState(false);
   const [fillOpacity, setFillOpacity] = useState(0.45);
+  const [basemap, setBasemap] = useState<BasemapId>('osm');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const tileBasemapRef = useRef<BasemapId | null>(null);
   const tileStatsRef = useRef({ failed: 0, loaded: 0 });
 
   const key = keyColumn(columns);
@@ -134,30 +181,25 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     if (!el || !fc) return;
 
     const map = L.map(el, { zoomControl: true, attributionControl: true });
+    mapRef.current = map;
+
+    // Leaflet does not auto-resize its canvas when the container changes
+    // (browser resize, or the bubble's percentage width growing). Observe the
+    // container and re-rasterize on size change.
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize());
+    resizeObserver.observe(el);
+
     const bounds = L.geoJSON(fc).getBounds();
     map.fitBounds(bounds, { padding: [8, 8] });
     map.setMaxBounds(bounds.pad(3));
 
-    // OSM basemap with graceful fallback: if a batch of tiles fails with no
+    // Basemap with graceful fallback: if a batch of tiles fails with no
     // successful loads (offline / blocked), drop the layer and continue as a
     // polygons-only choropleth. Stats are per-mount: re-opening the map
     // re-attempts tiles from scratch.
-    const stats = tileStatsRef.current;
-    const tile = L.tileLayer(OSM_TILE_URL, {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-    tile.on('tileload', () => {
-      stats.loaded += 1;
-    });
-    tile.on('tileerror', () => {
-      stats.failed += 1;
-      if (shouldDropTileLayer(stats.failed, stats.loaded)) {
-        tile.off();
-        map.removeLayer(tile);
-        setTilesOffline(true);
-      }
-    });
+    tileStatsRef.current = { failed: 0, loaded: 0 };
+    tileLayerRef.current = addTileLayer(map, basemap, tileStatsRef.current, () => setTilesOffline(true));
+    tileBasemapRef.current = basemap;
 
     const styleFor = (feature: GeoJSON.Feature | undefined): L.PathOptions => {
       const code = String(feature?.properties?.code ?? '');
@@ -194,8 +236,12 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     map.on('click', () => setSelectedCode(null));
 
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       geoLayerRef.current = null;
+      mapRef.current = null;
+      tileLayerRef.current = null;
+      tileBasemapRef.current = null;
       tileStatsRef.current = { failed: 0, loaded: 0 };
       setTilesOffline(false);
     };
@@ -204,6 +250,19 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
     // re-running this (re-running would rebuild the map and reset zoom/pan).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fc, theme]);
+
+  // Basemap change: swap the tile layer in place (no map recreation, so the
+  // user's zoom/pan is preserved) and reset the offline-fallback state.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || tileBasemapRef.current === basemap) return;
+    const prev = tileLayerRef.current;
+    if (prev) map.removeLayer(prev);
+    tileStatsRef.current = { failed: 0, loaded: 0 };
+    setTilesOffline(false);
+    tileLayerRef.current = addTileLayer(map, basemap, tileStatsRef.current, () => setTilesOffline(true));
+    tileBasemapRef.current = basemap;
+  }, [basemap]);
 
   // Metric / selection / palette changes: restyle the existing layer in place
   // (no map recreation, so the user's zoom/pan is preserved).
@@ -249,6 +308,20 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
 
   return (
     <div className="flex flex-col gap-1.5 pt-2">
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        Basemap:
+        <select
+          value={basemap}
+          onChange={(e) => setBasemap(e.target.value as BasemapId)}
+          className="rounded-md border bg-background px-1.5 py-1 text-xs"
+        >
+          {Object.entries(BASEMAPS).map(([id, b]) => (
+            <option key={id} value={id}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+      </label>
       {numCols.length >= 2 && (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           Metric:
@@ -296,7 +369,7 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
         <span>{formatValue(model.max)}</span>
       </div>
       <div className="text-[10.5px] text-muted-foreground">
-        © OpenStreetMap contributors · PSGC © PSA · Boundaries © Christian Blanquera / OSSPhilippines (MIT)
+        © OpenStreetMap contributors · PSGC © PSA · Boundaries © Faeldon — faeldon/philippines-json-maps (MIT)
       </div>
     </div>
   );
