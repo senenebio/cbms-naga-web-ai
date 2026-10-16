@@ -38,6 +38,11 @@ the LLM:
 3. Explains the results in plain English
 4. Renders charts / tables / a barangay map when it makes sense
 
+The barangay map has three basemaps (OpenStreetMap, OpenTopoMap, and
+**OSM Landuse**). Landuse is a coarse thematic landuse/landcover WMS — it
+renders at low zoom but is **blank over Naga City at street zoom**, so it's a
+"what's the land used for" view, not a street map.
+
 Name matching is **case-insensitive and fuzzy** — try "naga" or "PILAR" and
 it'll find the right rows.
 
