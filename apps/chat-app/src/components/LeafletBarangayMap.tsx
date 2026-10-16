@@ -5,8 +5,8 @@
  * - Plain Leaflet (imperative `L.map` in an effect; no `react-leaflet` — it
  *   requires React 19). Loaded lazily (this module is a `React.lazy` chunk),
  *   so Leaflet's ~140 KB only ships when "Show map" is first opened.
- * - OSM basemap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, per the
- *   OSMF tile usage policy).
+ * - Basemap `<select>` (OpenStreetMap, OpenTopoMap, OSM Landuse WMS), per the
+ *   OSMF tile usage policy; see `WMS_BASEMAPS`/`XYZ_BASEMAPS` below.
  * - Interactions: hover tooltip, click-pins a detail row (name, value,
  *   urban/rural), legend (min/max), metric `<select>` for 2+ numeric columns.
  *   Re-clicking a barangay or clicking the background clears the pin.
