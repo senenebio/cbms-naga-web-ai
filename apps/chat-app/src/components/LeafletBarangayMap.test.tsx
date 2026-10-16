@@ -88,7 +88,7 @@ describe('<LeafletBarangayMap />', () => {
     expect(select).toBeInTheDocument();
   });
 
-  it('shows a basemap selector with OpenStreetMap and OpenTopoMap', async () => {
+  it('shows a basemap selector with OpenStreetMap, OpenTopoMap, and OSM Landuse', async () => {
     const columns = ['code', 'barangay', 'hh'];
     const rows: unknown[][] = [[1, 'BQ 1', 100]];
     render(<LeafletBarangayMap columns={columns} rows={rows} theme="light" geojson={fixtureGeo()} />);
@@ -96,6 +96,7 @@ describe('<LeafletBarangayMap />', () => {
     expect(select).toBeInTheDocument();
     expect(within(select).getByRole('option', { name: 'OpenStreetMap' })).toBeInTheDocument();
     expect(within(select).getByRole('option', { name: 'OpenTopoMap' })).toBeInTheDocument();
+    expect(within(select).getByRole('option', { name: 'OSM Landuse' })).toBeInTheDocument();
   });
 
   it('renders without a metric selector for a single numeric column', async () => {

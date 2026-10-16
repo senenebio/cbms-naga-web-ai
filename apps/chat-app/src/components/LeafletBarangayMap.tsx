@@ -5,8 +5,8 @@
  * - Plain Leaflet (imperative `L.map` in an effect; no `react-leaflet` — it
  *   requires React 19). Loaded lazily (this module is a `React.lazy` chunk),
  *   so Leaflet's ~140 KB only ships when "Show map" is first opened.
- * - OSM basemap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, per the
- *   OSMF tile usage policy).
+ * - Basemap `<select>` (OpenStreetMap, OpenTopoMap, OSM Landuse WMS), per the
+ *   OSMF tile usage policy; see `WMS_BASEMAPS`/`XYZ_BASEMAPS` below.
  * - Interactions: hover tooltip, click-pins a detail row (name, value,
  *   urban/rural), legend (min/max), metric `<select>` for 2+ numeric columns.
  *   Re-clicking a barangay or clicking the background clears the pin.
@@ -38,11 +38,18 @@ import type { Theme } from '../theme.js';
 const GEO_URL = `/data/${BRAND.dataset.id}/${BRAND.dataset.geojson}?v=${__DATA_VERSION__}`;
 
 /**
- * Basemap options. Both are open (OpenStreetMap data); OpenTopoMap is a
- * volunteer-run server, so we cap its zoom to be a good citizen.
+ * Basemap options. All are open (OpenStreetMap data). OpenTopoMap is a
+ * volunteer-run server, so we cap its zoom to be a good citizen. The Landuse
+ * option is a WMS (see `WMS_BASEMAPS`), kept as a separate path because it's
+ * drawn on request rather than served as a tile cache.
  */
-type BasemapId = 'osm' | 'opentopo';
-const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: string; maxZoom: number }> = {
+type BasemapId = 'osm' | 'opentopo' | 'landuse';
+
+/** XYZ (tile-cache) basemaps — plain `{z}/{x}/{y}` image tiles. */
+const XYZ_BASEMAPS: Record<
+  'osm' | 'opentopo',
+  { label: string; url: string; attribution: string; maxZoom: number }
+> = {
   osm: {
     label: 'OpenStreetMap',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -57,6 +64,31 @@ const BASEMAPS: Record<BasemapId, { label: string; url: string; attribution: str
   },
 };
 
+/**
+ * WMS basemaps — drawn on request (not a tile cache). osmlanduse.org's
+ * MapProxy XYZ cache is dead (404), so we talk to the WMS directly. Coarse
+ * thematic landuse/landcover: renders at low zoom, is blank at street zoom,
+ * and has no coverage over Naga / the Philippines. See landuse-basemap-spec.
+ */
+const WMS_BASEMAPS: Record<
+  'landuse',
+  { label: string; url: string; layers: string; attribution: string; maxZoom: number }
+> = {
+  landuse: {
+    label: 'OSM Landuse',
+    url: 'https://maps.heigit.org/osmlanduse/service',
+    layers: 'osmlanduse:osm_lulc_combined_osm4eo',
+    attribution: 'OSM Landuse © OpenStreetMap contributors &amp; GIScience Heidelberg (ODbL)',
+    maxZoom: 12,
+  },
+};
+
+/** All basemap options, in selector order (XYZ first, then WMS). */
+const BASEMAP_OPTIONS: [BasemapId, string][] = [
+  ...Object.entries(XYZ_BASEMAPS).map(([id, b]) => [id, b.label] as [BasemapId, string]),
+  ...Object.entries(WMS_BASEMAPS).map(([id, b]) => [id, b.label] as [BasemapId, string]),
+];
+
 /** Create a basemap tile layer with the shared offline-fallback behavior. */
 function addTileLayer(
   map: L.Map,
@@ -64,8 +96,20 @@ function addTileLayer(
   stats: { failed: number; loaded: number },
   onOffline: () => void,
 ): L.TileLayer {
-  const b = BASEMAPS[id];
-  const tile = L.tileLayer(b.url, { attribution: b.attribution, maxZoom: b.maxZoom }).addTo(map);
+  let tile: L.TileLayer;
+  const wms = WMS_BASEMAPS[id as 'landuse'];
+  if (wms) {
+    tile = L.tileLayer.wms(wms.url, {
+      layers: wms.layers,
+      attribution: wms.attribution,
+      maxZoom: wms.maxZoom,
+      format: 'image/png',
+      transparent: false,
+    }).addTo(map);
+  } else {
+    const xyz = XYZ_BASEMAPS[id as 'osm' | 'opentopo'];
+    tile = L.tileLayer(xyz.url, { attribution: xyz.attribution, maxZoom: xyz.maxZoom }).addTo(map);
+  }
   tile.on('tileload', () => {
     stats.loaded += 1;
   });
@@ -315,9 +359,9 @@ export default function LeafletBarangayMap({ columns, rows, theme, geojson }: Le
           onChange={(e) => setBasemap(e.target.value as BasemapId)}
           className="rounded-md border bg-background px-1.5 py-1 text-xs"
         >
-          {Object.entries(BASEMAPS).map(([id, b]) => (
+          {BASEMAP_OPTIONS.map(([id, label]) => (
             <option key={id} value={id}>
-              {b.label}
+              {label}
             </option>
           ))}
         </select>
